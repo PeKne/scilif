@@ -3,10 +3,13 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
 import { BleManager, LogLevel } from 'react-native-ble-plx';
 import { StyleSheet, Text, View } from 'react-native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { NavigationContainer } from '@react-navigation/native';
+import IntroScreen from "./screens/IntroScreen";
 
 
 export default function App() {
-
+  const Stack = createNativeStackNavigator();
   const [manager, setManager] = useState(null);
 
 
@@ -19,8 +22,8 @@ export default function App() {
     const subscription = newManager.onStateChange((state) => {
       console.log("BLE Manager: monitor state", state);
       if (state === 'PoweredOn') {
-          scanAndConnect();
-          subscription.remove();
+        scanAndConnect();
+        subscription.remove();
       }
     }, true);
 
@@ -41,7 +44,7 @@ export default function App() {
 
         // Check if it is a device you are looking for based on advertisement data
         // or othe.log("ERROR LOG:r criteria.
-        if (device.name === BLE_DEVICE_NAME){
+        if (device.name === BLE_DEVICE_NAME) {
           console.log("BlueIoToy FOUND!!!");
           // Stop scanning as it's not necessary if you are scanning for one device.
           manager.stopDeviceScan();
@@ -53,10 +56,17 @@ export default function App() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text>Openupa Appa.js to start working on your app!!</Text>
-      <StatusBar style="auto" />
-    </View>
+    // <View style={styles.container}>
+    //   <Text>Openupa Appa.js to start working on your app!!</Text>
+    //   <StatusBar style="auto" />
+    // </View>
+    <NavigationContainer>
+      <Stack.Navigator>
+        <Stack.Screen name="Intro" component={IntroScreen} />
+        {/* <Stack.Screen name="Connections" component={C} />
+      <Stack.Screen name="Settings" component={SettingsScreen} /> */}
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
