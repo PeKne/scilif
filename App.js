@@ -311,7 +311,7 @@ export default function App() {
   function scan() {
     console.log("Scanning...");
 
-    manager.startDeviceScan([BLE.SERVICE_LED_CONTROL], {allowDuplicates: false}, (error, device) => {
+    manager.startDeviceScan(null, {allowDuplicates: false}, (error, device) => {
       if (error) {
         // Handle error (scanning will be stopped automatically)
         console.error("ERROR (BLE) scan:", error)

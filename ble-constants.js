@@ -1,5 +1,5 @@
 
-export const DEVICE_NAME = "SunFibre";
+export const DEVICE_NAME = "BlueIoToy";
 export const SERVICE_LED_CONTROL = "0000aaaa-1212-efde-1523-785fef13d123";
 export const SERVICE_MAINTENANCE = "0000aaaa-1413-f0df-1624-7960f014d224";
 export const DEVICE_SERVICES = [SERVICE_LED_CONTROL, SERVICE_MAINTENANCE];
