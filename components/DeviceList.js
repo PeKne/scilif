@@ -8,15 +8,20 @@ import DeviceItem from './DeviceItem';
 
 const wait = (timeout) => new Promise((resolve) => setTimeout(resolve, timeout));
 
+const REFRESH_INTERVAL = 1000;
+
 export default function DeviceList({
-  navigation, devices, scanDevices, connectDevice, ...props
+  navigation, devices, startScanDevices, stopScanDevices, clearDevices, connectDevice, setSelectedDevice, ...props
 }) {
   const [refreshing, setRefreshing] = React.useState(false);
 
+  //TODO: more UI stuff - might be redundant
   const onRefresh = React.useCallback(() => {
-    scanDevices();
     setRefreshing(true);
-    wait(1000).then(() => setRefreshing(false));
+    clearDevices();
+    wait(REFRESH_INTERVAL).then(() => {
+      setRefreshing(false);
+    });
   }, []);
 
   const EmptyList = <View><ActivityIndicator size="large" /></View>;
@@ -28,7 +33,13 @@ export default function DeviceList({
         containerStyle={styles.wrapper}
         data={devices}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        renderItem={(device) => <DeviceItem device={device} navigation={navigation} connectDevice={connectDevice} />}
+        renderItem={(deviceListItem) => 
+          <DeviceItem 
+            navigation={navigation}
+            deviceListItem={deviceListItem}
+            connectDevice={connectDevice}
+            setSelectedDevice={setSelectedDevice}
+          />}
         keyExtractor={(item) => item.device.id}
         ListEmptyComponent={EmptyList}
         ItemSeparatorComponent={Divider}

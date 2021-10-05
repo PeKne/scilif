@@ -3,16 +3,28 @@ import { StyleSheet } from 'react-native';
 import { ListItem, Icon } from 'react-native-elements';
 
 export default function DeviceItem({
-  device, navigation, connectDevice, ...props
+  deviceListItem, navigation, connectDevice, setSelectedDevice, ...props
 }) {
   const connectHandler = () => {
-    connectDevice(device.item);
+
+    // extract SunFibreDevice object from list item
+    let sfd = deviceListItem.item;
+
+    // set device as selected
+    console.log("Setting selected device...", sfd.getDevice().name);
+    setSelectedDevice(sfd);
+
+    // connect to device if it is not connected
+    if (!sfd.isConnected())
+      connectDevice(sfd);
+
+    // navigate
     navigation.navigate('Settings');
   };
 
   return (
     <ListItem
-      key={device.index}
+      key={deviceListItem.index}
       chevron
       rightIcon={{ name: 'av-timer' }}
       onPress={connectHandler}
@@ -20,7 +32,7 @@ export default function DeviceItem({
       containerStyle={styles.listItemContainer}
     >
       <ListItem.Content style={styles}>
-        <ListItem.Title>{device.item.device.name}</ListItem.Title>
+        <ListItem.Title>{deviceListItem.item.device.name}</ListItem.Title>
       </ListItem.Content>
       <Icon name="arrow-circle-right" size={25} />
     </ListItem>

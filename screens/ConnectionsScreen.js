@@ -9,16 +9,17 @@ import StatusBar from '../components/StatusBar';
 import { colors } from '../styles/theme';
 
 export default function ConnectionsScreen({
-  navigation, scanDevices, connectDevice, devices, ...props
+  navigation, startScanDevices, stopScanDevices, clearDevices, connectDevice, devices, setSelectedDevice, ...props
 }) {
   useEffect(() => {
-    scanDevices();
-    const interval = setInterval(() => scanDevices(), 3000); // periodically fetch devices
+    startScanDevices();
+    // const interval = setInterval(() => scanDevices(), 3000); // periodically fetch devices
 
-    return () => clearInterval(interval); // tear down function
+    // return () => clearInterval(interval); // tear down function
+    return () => stopScanDevices(); // tear down function
   }, []);
 
-  console.log(devices);
+  // console.log(devices);
 
   return (
 
@@ -26,7 +27,13 @@ export default function ConnectionsScreen({
       <Text>{devices.length}</Text>
       <StatusBar navigation={navigation} />
       <Text h1 style={styles.text}>Select Device:</Text>
-      <DeviceList navigation={navigation} devices={devices} scanDevices={scanDevices} connectDevice={connectDevice} />
+      <DeviceList navigation={navigation} devices={devices}
+        startScanDevices={startScanDevices}
+        stopScanDevices={stopScanDevices}
+        clearDevices={clearDevices}
+        connectDevice={connectDevice}
+        setSelectedDevice={setSelectedDevice}
+      />
 
     </View>
 

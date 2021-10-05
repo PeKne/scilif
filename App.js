@@ -23,6 +23,9 @@ export default function App() {
   // selected device (its card is opened)
   const [selectedDevice, setSelectedDevice] = useState(null);
 
+  // scanning (connections card is opened)
+  const [scanning, setScanning] = useState(false);
+
   const devicesReducer = (devices, action) => {
     switch (action.type) {
       /**
@@ -54,7 +57,6 @@ export default function App() {
 
         existingDevice.setConnected(true);
         existingDevice.setServicesCharacteristics(action.payload.servicesCharacteristics);
-        setSelectedDevice(existingDevice);
         return devices;
       }
 
@@ -73,6 +75,7 @@ export default function App() {
       case 'SET':
         return action.payload;
       case 'CLEAR':
+        console.log("Clearing devices...");
         return [];
       default:
         throw new Error('Unsupported devicesReducer action received.');
@@ -96,13 +99,16 @@ export default function App() {
       case 'SET_FLASH':
         writeDimLEDCharacteristics(selectedDevice, 0x3);
         return 'FLASH';
+      case 'SET_UNKNOWN':
+        return 'UNKNOWN';
+
       default:
         throw new Error('Unsupported modeReducer action received.');
     }
   };
 
   // mode of selected device
-  const [mode, dispatchMode] = useReducer(modeReducer, 'OFF');
+  const [mode, dispatchMode] = useReducer(modeReducer, 'SET_UNKNOWN');
 
   // TODO: diconnect x connect should be probably wrapped by a promise too
 
@@ -154,7 +160,7 @@ export default function App() {
     }, true);
 
     setManager(newManager);
-    dispatchDevices({ type: 'CLEAR' });
+    // dispatchDevices({ type: 'CLEAR' });
   }, []);
 
   useEffect(() => {
@@ -162,15 +168,35 @@ export default function App() {
   }, [devices]);
 
   // #region LAYER: sun fibre device
+  /**
+   * Promise to write dim LED char.
+   * @param {*} sunFibreDevice: SunFibreDevice
+   * @returns writePromise: Promise<Characteristic>
+   */
   function writeDimLEDCharacteristics(sunFibreDevice, value) {
+    console.log("Writing Dim LED char.: ", value);
     const ch = sunFibreDevice.getDimLEDCharacteristic();
-    console.log(`dim LED value: ${ch.value}`);
+    if (!ch) throw new Error("Device does not possesses requested characteristic!");
+
     return writeCharacteristics(sunFibreDevice.getDevice(), ch, value);
   }
 
+  /**
+   * Promise to read battery level char. and parse them to integer
+   * @param {*} sunFibreDevice: SunFibreDevice
+   * @returns readPromise: Promise<number>
+   */
   function readBatteryLevelCharacteristics(sunFibreDevice) {
+    console.log("Reading Battery Level char.");
     const ch = sunFibreDevice.getBatteryLevelCharacteristic();
-    return readCharacteristics(sunFibreDevice.getDevice(), ch);
+    if (!ch) throw new Error("Device does not possesses requested characteristic!");
+
+    return readCharacteristics(sunFibreDevice.getDevice(), ch).then(
+      (value) => {
+        let valueAsUInt8 = value.readUInt8();
+        return valueAsUInt8; 
+      }
+    );
   }
   // #endregion
 
@@ -180,7 +206,7 @@ export default function App() {
    * Util function to pretty print characteristic value as hex string
    * @param {*} value
    */
-  function base64ToHexStr(value) {
+  function base64StrToHexStr(value) {
     const buffer = Buffer.from(value, 'base64');
     const bufferStr = buffer.toString('hex');
 
@@ -191,9 +217,12 @@ export default function App() {
     return valueAsHex;
   }
 
-  function binaryToBase64(value) {
-    console.log(value);
-    const buffer = Buffer.from([value], 'binary');
+  function base64StrToBinaryArray(value) {
+    return Buffer.from(value, 'base64');
+  }
+
+  function binaryArrayToBase64Str(value) {
+    const buffer = Buffer.from(value, 'binary');
     return buffer.toString('base64');
   }
 
@@ -249,7 +278,13 @@ export default function App() {
     });
   }
 
-  function scan() {
+  function stopScan(){
+    console.log("Stopping scanning...");
+    setScanning(false);
+    manager.stopDeviceScan();
+  }
+
+  function startScan(){
     console.log('Scanning...');
 
     manager.startDeviceScan(null, { allowDuplicates: false }, (error, device) => {
@@ -257,11 +292,15 @@ export default function App() {
         // Handle error (scanning will be stopped automatically)
         console.error('ERROR (BLE) scan:', error);
       }
-      if (!device.name) return;
+      if (device === null || !device.name) return;
 
-      if (device.name.startsWith(BLE.DEVICE_NAME)) console.log(`${BLE.DEVICE_NAME} connected!`);
-      dispatchDevices({ type: 'SCANNED_DEVICE', payload: device });
+      if (BLE.DEVICE_NAMES.find(dn => device.name.startsWith(dn))){
+        // console.log(`${device.name} scanned!`);
+        dispatchDevices({ type: 'SCANNED_DEVICE', payload: device });
+      }
     });
+
+    setScanning(true);
   }
 
   function scanAndStop() {
@@ -326,11 +365,11 @@ export default function App() {
   function writeCharacteristics(device, characteristic, value) {
     return new Promise(async (resolve, reject) => {
       try {
-        await characteristic.writeWithoutResponse(binaryToBase64(value));
-        console.log(`NEW LED VALUE: ${characteristic.value}`);
+        await characteristic.writeWithoutResponse(binaryArrayToBase64Str([value]));
         resolve(characteristic);
       } catch (error) {
-        console.error('ERROR (BLE) writeCharacteristics:', error);
+        console.error("ERROR (BLE) writeCharacteristics:", error);
+        console.error("value to write: ", value);
         reject();
       }
     });
@@ -339,12 +378,12 @@ export default function App() {
   function readCharacteristics(device, characteristic) {
     return new Promise(async (resolve, reject) => {
       try {
-        await characteristic.read();
-        const value = base64ToHexStr(characteristic.value);
-        console.log('char read: ', characteristic.uuid, value);
-        resolve(value);
+        //NOTE: this must be assigned to a new variable 
+        let readCharacteristics = await characteristic.read();
+        console.log('(BLE) readCharacteristics: ', characteristic.uuid, base64StrToHexStr(readCharacteristics.value));
+        resolve(base64StrToBinaryArray(readCharacteristics.value));
       } catch (error) {
-        console.error('ERROR (BLE) writeCharacteristics:', error);
+        console.error('ERROR (BLE) readCharacteristics:', error);
         reject();
       }
     });
@@ -355,9 +394,35 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false, gestureEnabled: false }}>
-          <Stack.Screen name="Intro">{(props) => <IntroScreen {...props} deviceConnected={!!selectedDevice} />}</Stack.Screen>
-          <Stack.Screen name="Connections">{(props) => <ConnectionsScreen {...props} scanDevices={scan} connectDevice={connectToSunFibreDevice} devices={devices} />}</Stack.Screen>
-          <Stack.Screen name="Settings">{(props) => <SettingsScreen {...props} mode={mode} device={selectedDevice} disconnectDevice={disconnectSunFibreDevice} dispatchMode={dispatchMode} readBattery={readBatteryLevelCharacteristics} />}</Stack.Screen>
+
+          <Stack.Screen name="Intro">{(props) =>
+            <IntroScreen {...props}
+              deviceConnected={!!selectedDevice}
+            />}
+          </Stack.Screen>
+
+          <Stack.Screen name="Connections">{(props) => 
+            <ConnectionsScreen {...props}
+              startScanDevices={startScan}
+              stopScanDevices={stopScan}
+              clearDevices={() => dispatchDevices({type: 'CLEAR'})}
+              connectDevice={connectToSunFibreDevice}
+              devices={devices}
+              setSelectedDevice={setSelectedDevice}
+            />}
+          </Stack.Screen>
+
+          <Stack.Screen name="Settings">{(props) => 
+            <SettingsScreen {...props}
+              mode={mode}
+              dispatchMode={dispatchMode}
+              device={selectedDevice}
+              setSelectedDevice={setSelectedDevice}
+              disconnectDevice={disconnectSunFibreDevice}
+              readBattery={readBatteryLevelCharacteristics}
+            />}
+          </Stack.Screen>
+
         </Stack.Navigator>
       </NavigationContainer>
     </ThemeProvider>

@@ -10,7 +10,7 @@ export default function DeviceCard({ device, readBattery, ...props }) {
       <Card.Divider />
       <View>
         <View style={styles.property}>
-          <Text style={styles.propertyTitle}>battery level:</Text>
+          <Text style={styles.propertyTitle}>Battery level:</Text>
           <BatteryIndicator device={device} readBattery={readBattery} />
         </View>
       </View>
@@ -25,6 +25,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
   },
   propertyTitle: {
-    fontSize: 15,
+    fontSize: 16,
   },
 });

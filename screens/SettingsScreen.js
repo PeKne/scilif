@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   StyleSheet, View, ActivityIndicator, SafeAreaView,
 } from 'react-native';
@@ -9,7 +9,7 @@ import { colors } from '../styles/theme';
 import DeviceCard from '../components/DeviceCard';
 
 export default function SettingsScreen({
-  device, mode, dispatchMode, navigation, disconnectDevice, readBattery, ...props
+  navigation, device, setSelectedDevice, mode, dispatchMode, disconnectDevice, readBattery, ...props
 }) {
   const disconnectHandler = () => {
     disconnectDevice(device);
@@ -19,6 +19,12 @@ export default function SettingsScreen({
 
   const OptionButton = (props) => <Button type="outline" disabledStyle={device ? styles.activatedButton : null} disabledTitleStyle={device ? styles.activeButtonTitle : null} {...props} />;
 
+
+  // unselect device at the end
+  useEffect(() => {
+    return () => setSelectedDevice(null); // tear down function
+  }, []);
+
   return (
     <SafeAreaView style={styles.screen}>
       <StatusBar navigation={navigation} />
@@ -26,8 +32,8 @@ export default function SettingsScreen({
 
       <View style={styles.deviceInfoWrapper}>
         {device ? 
-          <DeviceCard device={device} readBattery={readBattery} />
-          : <ActivityIndicator size="large" />}
+          <DeviceCard device={device} readBattery={readBattery} /> : <ActivityIndicator size="large" />
+        }
       </View>
 
       <View style={styles.buttonWrapper}>

@@ -11,6 +11,7 @@ export const colors = {
   battery3: '#f0c30e',
   battery4: '#0dac50',
   battery5: '#00792a',
+  batteryUnknown: '#909090',
 };
 
 const theme = {

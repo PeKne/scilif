@@ -44,9 +44,11 @@ export class SunFibreDevice{
   }
 
   getDimLEDCharacteristic(){
+    if (!this.servicesCharacteristics) return null;
     return this.servicesCharacteristics[BLE.SERVICE_LED_CONTROL][BLE.CHARACTERISTIC_DIM_LED_IDX];
   }
   getBatteryLevelCharacteristic(){
+    if (!this.servicesCharacteristics) return null;
     return this.servicesCharacteristics[BLE.SERVICE_MAINTENANCE][BLE.CHARACTERISTIC_BATTERY_LEVEL_IDX];
   }
 
