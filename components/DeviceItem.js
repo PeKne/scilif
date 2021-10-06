@@ -3,20 +3,23 @@ import { StyleSheet } from 'react-native';
 import { ListItem, Icon } from 'react-native-elements';
 
 export default function DeviceItem({
-  deviceListItem, navigation, connectDevice, setSelectedDevice, ...props
+  deviceListItem, navigation, connectDevice, onDeviceDisconnected, setSelectedDevice, ...props
 }) {
-  const connectHandler = () => {
+  const connectHandler = async () => {
 
     // extract SunFibreDevice object from list item
     let sfd = deviceListItem.item;
 
     // set device as selected
     console.log("Setting selected device...", sfd.getDevice().name);
+    // connect to device if it is not connected
+    if (!sfd.isConnected()){
+      await connectDevice(sfd);
+      // onDeviceDisconnected(sfd.getDevice());
+    }
+
     setSelectedDevice(sfd);
 
-    // connect to device if it is not connected
-    if (!sfd.isConnected())
-      connectDevice(sfd);
 
     // navigate
     navigation.navigate('Settings');

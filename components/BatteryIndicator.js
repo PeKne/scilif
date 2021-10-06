@@ -5,10 +5,12 @@ import { colors } from '../styles/theme';
 
 import * as BLE from '../ble-constants';
 
-export default function BatteryIndicator({ device, readBattery, ...props }) {
+export default function BatteryIndicator({ device, readBatteryLevel, ...props }) {
 
   const batteryReducer = (prevState, action) => {
     switch (action) {
+      case 0x00:
+        return { value: 'Drained', color: colors.battery0, icon: 'battery-empty' };
       case 0x01:
         return { value: 'Very Low', color: colors.battery1, icon: 'battery-empty' };
       case 0x02:
@@ -23,13 +25,11 @@ export default function BatteryIndicator({ device, readBattery, ...props }) {
         return prevState;
     }
   };
-
   const [batteryState, dispatchBattery] = useReducer(batteryReducer, null);
 
-  const readBatteryHandler = async () => {
-
+  const readBatteryLevelHandler = async () => {
     try {
-      let batteryLevel = await readBattery(device);
+      let batteryLevel = await readBatteryLevel(device);
       dispatchBattery(batteryLevel);
     }
     catch(error){
@@ -40,11 +40,11 @@ export default function BatteryIndicator({ device, readBattery, ...props }) {
 
   useEffect(() => {
     if (device) {
+      // read characterisitcs on start
+      readBatteryLevelHandler();
+      const interval = setInterval(() => readBatteryLevelHandler(), BLE.BATTERY_REFRESH_INTERVAL); // periodically read battery
 
-      readBatteryHandler();
-      const interval = setInterval(() => readBatteryHandler(), BLE.BATTERY_REFRESH_INTERVAL); // periodically read battery
-
-      return () => { // tear down function
+      return () => { 
         dispatchBattery(null);
         clearInterval(interval);
       };

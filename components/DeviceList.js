@@ -11,7 +11,7 @@ const wait = (timeout) => new Promise((resolve) => setTimeout(resolve, timeout))
 const REFRESH_INTERVAL = 1000;
 
 export default function DeviceList({
-  navigation, devices, startScanDevices, stopScanDevices, clearDevices, connectDevice, setSelectedDevice, ...props
+  navigation, devices, startScanDevices, stopScanDevices, clearDevices, connectDevice, onDeviceDisconnected, setSelectedDevice, ...props
 }) {
   const [refreshing, setRefreshing] = React.useState(false);
 
@@ -38,6 +38,7 @@ export default function DeviceList({
             navigation={navigation}
             deviceListItem={deviceListItem}
             connectDevice={connectDevice}
+            onDeviceDisconnected={onDeviceDisconnected}
             setSelectedDevice={setSelectedDevice}
           />}
         keyExtractor={(item) => item.device.id}

@@ -5,7 +5,6 @@ import { BleManager } from 'react-native-ble-plx';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
 
-import { Buffer } from 'buffer';
 import IntroScreen from './screens/IntroScreen';
 import ConnectionsScreen from './screens/ConnectionsScreen';
 import SettingsScreen from './screens/SettingsScreen';
@@ -13,6 +12,7 @@ import SettingsScreen from './screens/SettingsScreen';
 import theme from './styles/theme';
 
 import * as BLE from './ble-constants';
+import * as utils from './utils';
 import { SunFibreDevice } from './models/sun-fibre-device';
 
 export default function App() {
@@ -84,31 +84,6 @@ export default function App() {
 
   // all SunFibre devices that were found
   const [devices, dispatchDevices] = useReducer(devicesReducer, []);
-
-  const modeReducer = (mode, action) => {
-    switch (action) {
-      case 'SET_OFF':
-        writeDimLEDCharacteristics(selectedDevice, 0x0);
-        return 'OFF';
-      case 'SET_ON_STRONG':
-        writeDimLEDCharacteristics(selectedDevice, 0x1);
-        return 'ON_STRONG';
-      case 'SET_ON_MILD':
-        writeDimLEDCharacteristics(selectedDevice, 0x2);
-        return 'ON_MILD';
-      case 'SET_FLASH':
-        writeDimLEDCharacteristics(selectedDevice, 0x3);
-        return 'FLASH';
-      case 'SET_UNKNOWN':
-        return 'UNKNOWN';
-
-      default:
-        throw new Error('Unsupported modeReducer action received.');
-    }
-  };
-
-  // mode of selected device
-  const [mode, dispatchMode] = useReducer(modeReducer, 'SET_UNKNOWN');
 
   // TODO: diconnect x connect should be probably wrapped by a promise too
 
@@ -182,6 +157,22 @@ export default function App() {
   }
 
   /**
+   * Promise to read dim LED char. and parse them to integer
+   * @param {*} sunFibreDevice: SunFibreDevice
+   * @returns readPromise: Promise<number>
+   */
+
+  function readDimLEDCharacteristics(sunFibreDevice){
+    console.log("Reading Dim LED char.");
+    const ch = sunFibreDevice.getDimLEDCharacteristic();
+    if (!ch) throw new Error("Device does not possesses requested characteristic!");
+
+    return readCharacteristics(sunFibreDevice.getDevice(), ch).then(
+      value => utils.base64StrToNumber(value)
+    );
+  }
+
+  /**
    * Promise to read battery level char. and parse them to integer
    * @param {*} sunFibreDevice: SunFibreDevice
    * @returns readPromise: Promise<number>
@@ -192,54 +183,39 @@ export default function App() {
     if (!ch) throw new Error("Device does not possesses requested characteristic!");
 
     return readCharacteristics(sunFibreDevice.getDevice(), ch).then(
-      (value) => {
-        let valueAsUInt8 = value.readUInt8();
-        return valueAsUInt8; 
-      }
+      value => utils.base64StrToNumber(value)
     );
   }
+
+  function readBatteryChargeCharacteristics(sunFibreDevice) {
+    console.log("Reading Battery Charge char.");
+    const ch = sunFibreDevice.getBatteryChargeCharacteristic();
+    if (!ch) throw new Error("Device does not possesses requested characteristic!");
+
+    return readCharacteristics(sunFibreDevice.getDevice(), ch).then(
+      value => utils.base64StrToNumber(value)
+    );
+  }
+
   // #endregion
 
-  // #region BLE TOOLS / HELPERS
 
-  /**
-   * Util function to pretty print characteristic value as hex string
-   * @param {*} value
-   */
-  function base64StrToHexStr(value) {
-    const buffer = Buffer.from(value, 'base64');
-    const bufferStr = buffer.toString('hex');
-
-    let valueAsHex = '';
-    for (let i = 0; i < bufferStr.length; i += 2) {
-      valueAsHex += `0x${bufferStr[i]}${bufferStr[i + 1]} `;
-    }
-    return valueAsHex;
-  }
-
-  function base64StrToBinaryArray(value) {
-    return Buffer.from(value, 'base64');
-  }
-
-  function binaryArrayToBase64Str(value) {
-    const buffer = Buffer.from(value, 'binary');
-    return buffer.toString('base64');
-  }
-
-  /**
-   * Util function to pretty print services and charactristics
-   * @param {*} serChar
-   * @returns
-   */
-  function prettyPrintServiceCharacteristics(serChar) {
-    return Object.keys(serChar).reduce((serCharPretty, sUUID) => {
-      serCharPretty[sUUID] = serChar[sUUID].map((ch) => ch.uuid);
-      return serCharPretty;
-    }, {});
-  }
-  // #endregion
 
   // #region LAYER: ble-plx
+
+  function monitorCharacteristic(characteristic, onCharacteristicValueChange){
+    return characteristic.monitor((error, characteristic) => {
+      if (error === null){
+        console.log(`(BLE): Monitor ${characteristic.uuid}, value has changed: ${utils.base64StrToHexStr(characteristic.value)}`);
+        onCharacteristicValueChange(characteristic.value);
+      }
+      else if (error.message === "Operation was cancelled") return;
+      else 
+        console.error(error);
+    })
+  }
+
+
   function connect(device) {
     return new Promise(async (resolve, reject) => {
       // let isConnected = await device.isConnected();
@@ -365,7 +341,7 @@ export default function App() {
   function writeCharacteristics(device, characteristic, value) {
     return new Promise(async (resolve, reject) => {
       try {
-        await characteristic.writeWithoutResponse(binaryArrayToBase64Str([value]));
+        await characteristic.writeWithoutResponse(utils.binaryArrayToBase64Str([value]));
         resolve(characteristic);
       } catch (error) {
         console.error("ERROR (BLE) writeCharacteristics:", error);
@@ -377,17 +353,28 @@ export default function App() {
 
   function readCharacteristics(device, characteristic) {
     return new Promise(async (resolve, reject) => {
+
       try {
         //NOTE: this must be assigned to a new variable 
         let readCharacteristics = await characteristic.read();
-        console.log('(BLE) readCharacteristics: ', characteristic.uuid, base64StrToHexStr(readCharacteristics.value));
-        resolve(base64StrToBinaryArray(readCharacteristics.value));
+        console.log('(BLE) readCharacteristics: ', characteristic.uuid, utils.base64StrToHexStr(readCharacteristics.value));
+        resolve(utils.base64StrToBinaryArray(readCharacteristics.value));
       } catch (error) {
         console.error('ERROR (BLE) readCharacteristics:', error);
         reject();
       }
     });
   }
+
+  //TODO: make this work
+  function listenDisconnection(device){
+    console.log('Scanning...');
+    manager.onDeviceDisconnected(device.id, (error, device) => {
+      console.log(`(BLE): Device ${device.name} has been disconnected`);
+      console.log("Error: ", error);
+    });
+  }
+
   // #endregion
 
   return (
@@ -407,19 +394,23 @@ export default function App() {
               stopScanDevices={stopScan}
               clearDevices={() => dispatchDevices({type: 'CLEAR'})}
               connectDevice={connectToSunFibreDevice}
+              onDeviceDisconnected={listenDisconnection}
               devices={devices}
               setSelectedDevice={setSelectedDevice}
+
             />}
           </Stack.Screen>
 
           <Stack.Screen name="Settings">{(props) => 
             <SettingsScreen {...props}
-              mode={mode}
-              dispatchMode={dispatchMode}
               device={selectedDevice}
               setSelectedDevice={setSelectedDevice}
               disconnectDevice={disconnectSunFibreDevice}
-              readBattery={readBatteryLevelCharacteristics}
+              writeDimLED={writeDimLEDCharacteristics}
+              readDimLED={readDimLEDCharacteristics}
+              readBatteryLevel={readBatteryLevelCharacteristics}
+              readBatteryCharge={readBatteryChargeCharacteristics}
+              monitorCharacteristic={monitorCharacteristic}
             />}
           </Stack.Screen>
 

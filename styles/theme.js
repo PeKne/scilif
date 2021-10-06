@@ -6,11 +6,12 @@ export const colors = {
   yellow: '#FDEA00',
   red: '#FF2E00',
 
+  battery0: '#ff0000',
   battery1: '#cb3c2c',
   battery2: '#f39c11',
   battery3: '#f0c30e',
-  battery4: '#0dac50',
-  battery5: '#00792a',
+  battery4: '#74ac0d',
+  battery5: '#00ff00',
   batteryUnknown: '#909090',
 };
 
