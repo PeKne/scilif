@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Card, Text } from 'react-native-elements';
+import { Card, Text, Icon } from 'react-native-elements';
+// import AsyncStorage from '@react-native-async-storage/async-storage';
+import Dialog from "react-native-dialog";
+
 import BatteryIndicator from './BatteryIndicator';
 
 import * as utils from '../utils';
@@ -10,12 +13,37 @@ export default function DeviceCard({ device, readBatteryLevel, readBatteryCharge
 
   const [batteryCharge, setBatteryCharge] = useState(null);
   const [temperature, setTemperature] = useState(null);
+  const [promptVisible, setPromptVisible] = useState(false);
+  const [deviceName, setDeviceName] = useState(device.device.name);
+  const [dialogInput, setDialogInput] = useState(device.device.name);
 
   const subscription = useRef(null);
   const pollInterval = useRef(null);
 
   const pollTemperatureHandler = () => {
     pollInterval.current = setInterval(() => readTemperatureHandler(), BLE.TEMPERATURE_REFRESH_INTERVAL); // periodically read battery
+  }
+
+  const hideDialog = () => {
+    setPromptVisible(false)
+  }
+
+  const showDialog = () => {
+    setPromptVisible(true)
+  }
+
+  const handleDialogSubmit = async () => {
+    hideDialog();
+    // await AsyncStorage.setItem(f`@DEVICE:${device.device.id}`, value)
+    setDeviceName(dialogInput)
+  }
+
+  const storeData = async (value) => {
+    try {
+      await AsyncStorage.setItem('@storage_Key', value)
+    } catch (e) {
+      // saving error  
+    }
   }
 
   const monitorBatteryChargeHandler = () => {
@@ -31,7 +59,7 @@ export default function DeviceCard({ device, readBatteryLevel, readBatteryCharge
       let batteryCharge = await readBatteryCharge(device);
       setBatteryCharge(batteryCharge);
     }
-    catch(error){
+    catch (error) {
       console.warn("Error in reading battery charge");
       setBatteryCharge(null);
     }
@@ -63,7 +91,7 @@ export default function DeviceCard({ device, readBatteryLevel, readBatteryCharge
       return () => { // tear down function
         if (pollInterval.current)
           clearInterval(pollInterval.current);
-        if (subscription.current){
+        if (subscription.current) {
           console.debug("Battery Charge subscription removed");
           subscription.current.remove();
         }
@@ -72,31 +100,42 @@ export default function DeviceCard({ device, readBatteryLevel, readBatteryCharge
   }, [device]);
 
   return (
-    <Card>
-      <Card.Title style={styles.deviceTitle}>{device.device.name}</Card.Title>
-      <Card.Divider />
-      <View style={styles.layout}>
-        <View style={styles.property}>
-          <Text style={styles.propertyTitle}>BATTERY LEVEL:</Text>
-          <BatteryIndicator device={device} readBatteryLevel={readBatteryLevel}/>
+    <>
+      <Card>
+        <Card.Title style={styles.deviceTitle}>{deviceName} {"  "} <Icon name={"pencil"} size={18} onPress={showDialog} /> </Card.Title>
+        <Card.Divider />
+        <View style={styles.layout}>
+          <View style={styles.property}>
+            <Text style={styles.propertyTitle}>BATTERY LEVEL:</Text>
+            <BatteryIndicator device={device} readBatteryLevel={readBatteryLevel} />
+          </View>
+          <View style={styles.property}>
+            <Text style={styles.propertyTitle}>MCU TEMPERATURE:</Text>
+            <Text style={styles.propertyTitle}> {temperature ?? '?'} °C</Text>
+          </View>
+          <View style={styles.property}>
+            {
+              batteryCharge !== null ?
+                batteryCharge ?
+                  <Text style={styles.batteryCharging}> CHARGING DEVICE {"\n"} </Text>
+                  :
+                  <Text style={styles.batteryNotCharging}>DEVICE ON BATTERY {"\n"}</Text>
+                : null
+            }
+          </View>
         </View>
-        <View style={styles.property}>
-          <Text style={styles.propertyTitle}>MCU TEMPERATURE:</Text>
-          <Text style={styles.propertyTitle}> {temperature ?? '?'} °C</Text>
-        </View>
-        <View style={styles.property}>
-          {
-            batteryCharge !== null? 
-              batteryCharge? 
-                <Text style={styles.batteryCharging}> CHARGING DEVICE {"\n"} </Text>
-              :
-                <Text style={styles.batteryNotCharging}>DEVICE ON BATTERY {"\n"}</Text>
-            : null
-          } 
-        </View>
-      </View>
 
-    </Card>
+      </Card>
+      <Dialog.Container onBackdropPress={hideDialog} visible={promptVisible}> 
+        <Dialog.Title>Rename device</Dialog.Title>
+        <Dialog.Description>
+          Please enter new name of the device
+        </Dialog.Description>
+        <Dialog.Input onChangeText={setDialogInput} value={dialogInput} />
+        <Dialog.Button label="Save" onPress={handleDialogSubmit}/>
+        <Dialog.Button label="Cancel" onPress={hideDialog} />
+      </Dialog.Container>
+    </>
   );
 }
 
