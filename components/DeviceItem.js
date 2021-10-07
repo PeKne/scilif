@@ -2,6 +2,8 @@ import React from 'react';
 import { StyleSheet } from 'react-native';
 import { ListItem, Icon } from 'react-native-elements';
 
+import {colors} from '../styles/theme';
+
 export default function DeviceItem({
   deviceListItem, navigation, connectDevice, onDeviceDisconnected, setSelectedDevice, ...props
 }) {
@@ -36,8 +38,10 @@ export default function DeviceItem({
     >
       <ListItem.Content style={styles}>
         <ListItem.Title>{deviceListItem.item.device.name}</ListItem.Title>
+        <ListItem.Subtitle>MAC: {deviceListItem.item.device.id}</ListItem.Subtitle>
+        <ListItem.Subtitle>RSSI: {deviceListItem.item.device.rssi}</ListItem.Subtitle>
       </ListItem.Content>
-      <Icon name="arrow-circle-right" size={25} />
+      <Icon name="arrow-circle-right" size={25}  color={deviceListItem.item.isConnected() ? colors.battery5 : colors.primary } />
     </ListItem>
   );
 }
@@ -51,6 +55,6 @@ const styles = StyleSheet.create({
   },
   listItemContainer: {
     backgroundColor: '#000',
-    width: '80%',
+    width: '100%',
   },
 });

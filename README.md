@@ -10,15 +10,15 @@ Project is configured and tested running on physical Iphone SE device.
 
 # TODO:
 [ConnectionsScreen.js]
-- add rssi ... device.getRssi()
-- add mac address ... device.getId()
-- select button green if device isConnected .... device.isConnected()
-- add support for user defined names of devices (saved in app storage)
+- [x] add rssi ... device.getRssi()
+- [x] add mac address ... device.getId()
+- [x] select button green if device isConnected .... device.isConnected()
+- [ ] add support for user defined names of devices (saved in app storage)
 
 
 [TESTING]
-- test all on iphone
-- test bonding on iphone
-- test production build permissions (does it ask to enable bluetooth)
+- [x] test all on iphone
+- [x] test bonding on iphone
+- [ ] test production build permissions (does it ask to enable bluetooth)
 
 

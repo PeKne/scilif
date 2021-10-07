@@ -141,17 +141,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   buttonWrapper: {
-    flex: 1,
     marginHorizontal: '15%',
-    marginVertical: '12%',
+    marginVertical: '5%',
   },
   text: {
     textAlign: 'center',
   },
   deviceInfoWrapper: {
-    marginTop: '15%',
     marginHorizontal: '5%',
-    height: '20%',
+    minHeight: '5%',
     textAlign: 'center',
     justifyContent: 'center',
   },
