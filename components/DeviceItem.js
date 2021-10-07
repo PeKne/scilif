@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { StyleSheet } from 'react-native';
 import { ListItem, Icon } from 'react-native-elements';
 
 export default function DeviceItem({
-  deviceListItem, navigation, connectDevice, onDeviceDisconnected, setSelectedDevice, ...props
+  deviceListItem, navigation, connectDevice, monitorDisconnection, setSelectedDevice, ...props
 }) {
+
+  const onDisconnectedSubscription = useRef(null);
+
   const connectHandler = async () => {
 
     // extract SunFibreDevice object from list item
@@ -15,15 +18,22 @@ export default function DeviceItem({
     // connect to device if it is not connected
     if (!sfd.isConnected()){
       await connectDevice(sfd);
-      // onDeviceDisconnected(sfd.getDevice());
+      onDisconnectedSubscription.current = monitorDisconnection(sfd.getDevice());
     }
 
     setSelectedDevice(sfd);
 
-
     // navigate
     navigation.navigate('Settings');
   };
+
+  useEffect(() => {
+    return () => {
+      if (onDisconnectedSubscription.current)
+        onDisconnectedSubscription.current.remove();
+    } 
+  }, []);
+
 
   return (
     <ListItem

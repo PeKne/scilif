@@ -9,7 +9,7 @@ import StatusBar from '../components/StatusBar';
 import { colors } from '../styles/theme';
 
 export default function ConnectionsScreen({
-  navigation, startScanDevices, stopScanDevices, clearDevices, connectDevice, onDeviceDisconnected, devices, setSelectedDevice, ...props
+  navigation, startScanDevices, stopScanDevices, clearDevices, connectDevice, monitorDisconnection, devices, setSelectedDevice, ...props
 }) {
   useEffect(() => {
     startScanDevices();
@@ -32,7 +32,7 @@ export default function ConnectionsScreen({
         stopScanDevices={stopScanDevices}
         clearDevices={clearDevices}
         connectDevice={connectDevice}
-        onDeviceDisconnected={onDeviceDisconnected}
+        monitorDisconnection={monitorDisconnection}
         setSelectedDevice={setSelectedDevice}
       />
 

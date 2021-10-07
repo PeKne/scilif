@@ -168,7 +168,7 @@ export default function App() {
     if (!ch) throw new Error("Device does not possesses requested characteristic!");
 
     return readCharacteristics(sunFibreDevice.getDevice(), ch).then(
-      value => utils.base64StrToNumber(value)
+      value => utils.base64StrToUInt8(value)
     );
   }
 
@@ -183,7 +183,7 @@ export default function App() {
     if (!ch) throw new Error("Device does not possesses requested characteristic!");
 
     return readCharacteristics(sunFibreDevice.getDevice(), ch).then(
-      value => utils.base64StrToNumber(value)
+      value => utils.base64StrToUInt8(value)
     );
   }
 
@@ -193,7 +193,17 @@ export default function App() {
     if (!ch) throw new Error("Device does not possesses requested characteristic!");
 
     return readCharacteristics(sunFibreDevice.getDevice(), ch).then(
-      value => utils.base64StrToNumber(value)
+      value => utils.base64StrToUInt8(value)
+    );
+  }
+
+  function readTempratureCharacteristics(sunFibreDevice) {
+    console.log("Reading temperature char.");
+    const ch = sunFibreDevice.getTemperatureCharacteristic();
+    if (!ch) throw new Error("Device does not possesses requested characteristic!");
+
+    return readCharacteristics(sunFibreDevice.getDevice(), ch).then(
+      value => utils.base64StrToInt32(value)
     );
   }
 
@@ -367,9 +377,9 @@ export default function App() {
   }
 
   //TODO: make this work
-  function listenDisconnection(device){
-    console.log('Scanning...');
-    manager.onDeviceDisconnected(device.id, (error, device) => {
+  function monitorDisconnection(device){
+    console.log('Listening disconnection...');
+    return manager.onDeviceDisconnected(device.id, (error, device) => {
       console.log(`(BLE): Device ${device.name} has been disconnected`);
       console.log("Error: ", error);
     });
@@ -394,7 +404,7 @@ export default function App() {
               stopScanDevices={stopScan}
               clearDevices={() => dispatchDevices({type: 'CLEAR'})}
               connectDevice={connectToSunFibreDevice}
-              onDeviceDisconnected={listenDisconnection}
+              monitorDisconnection={monitorDisconnection}
               devices={devices}
               setSelectedDevice={setSelectedDevice}
 
@@ -410,6 +420,7 @@ export default function App() {
               readDimLED={readDimLEDCharacteristics}
               readBatteryLevel={readBatteryLevelCharacteristics}
               readBatteryCharge={readBatteryChargeCharacteristics}
+              readTemperature={readTempratureCharacteristics}
               monitorCharacteristic={monitorCharacteristic}
             />}
           </Stack.Screen>

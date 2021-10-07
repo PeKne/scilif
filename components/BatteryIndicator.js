@@ -5,6 +5,7 @@ import { colors } from '../styles/theme';
 
 import * as BLE from '../ble-constants';
 
+//TODO: move this to DeviceCardr
 export default function BatteryIndicator({ device, readBatteryLevel, ...props }) {
 
   const batteryReducer = (prevState, action) => {

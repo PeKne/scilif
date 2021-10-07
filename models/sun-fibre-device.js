@@ -57,4 +57,9 @@ export class SunFibreDevice{
     return this.servicesCharacteristics[BLE.SERVICE_MAINTENANCE][BLE.CHARACTERISTIC_BATTERY_CHARGING_IDX];
   }
 
+  getTemperatureCharacteristic(){
+    if (!this.servicesCharacteristics) return null;
+    return this.servicesCharacteristics[BLE.SERVICE_MAINTENANCE][BLE.CHARACTERISTIC_TEMPERATURE_IDX];
+  }
+
 }

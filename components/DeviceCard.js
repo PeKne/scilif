@@ -4,18 +4,24 @@ import { Card, Text } from 'react-native-elements';
 import BatteryIndicator from './BatteryIndicator';
 
 import * as utils from '../utils';
+import * as BLE from '../ble-constants';
 
-export default function DeviceCard({ device, readBatteryLevel, readBatteryCharge, monitorCharacteristic, ...props }) {
+export default function DeviceCard({ device, readBatteryLevel, readBatteryCharge, readTemperature, monitorCharacteristic, ...props }) {
 
   const [batteryCharge, setBatteryCharge] = useState(null);
+  const [temperature, setTemperature] = useState(null);
 
   const subscription = useRef(null);
+  const pollInterval = useRef(null);
 
+  const pollTemperatureHandler = () => {
+    pollInterval.current = setInterval(() => readTemperatureHandler(), BLE.TEMPERATURE_REFRESH_INTERVAL); // periodically read battery
+  }
 
   const monitorBatteryChargeHandler = () => {
     subscription.current = monitorCharacteristic(device.getBatteryChargeCharacteristic(), (value) => {
       console.log("Battery charge, value has changed.", utils.base64StrToHexStr(value));
-      let batteryCharge = utils.base64StrToNumber(value);
+      let batteryCharge = utils.base64StrToUInt8(value);
       setBatteryCharge(batteryCharge);
     });
   }
@@ -31,16 +37,32 @@ export default function DeviceCard({ device, readBatteryLevel, readBatteryCharge
     }
   };
 
+  const readTemperatureHandler = async () => {
+    try {
+      let temperature = await readTemperature(device);
+      setTemperature(temperature);
+    }
+    catch(error){
+      console.warn("Error in reading temperature");
+      setTemperature(null);
+    }
+  };
+
 
   useEffect(() => {
     if (device) {
       // read characterisitcs on start
       readBatteryChargeHandler();
-
+      readTemperatureHandler();
       // monitor characteristics 
       monitorBatteryChargeHandler();
+      // periodically read temperature
+      pollTemperatureHandler();
+
 
       return () => { // tear down function
+        if (pollInterval.current)
+          clearInterval(pollInterval.current);
         if (subscription.current){
           console.debug("Battery Charge subscription removed");
           subscription.current.remove();
@@ -60,7 +82,7 @@ export default function DeviceCard({ device, readBatteryLevel, readBatteryCharge
         </View>
         <View style={styles.property}>
           <Text style={styles.propertyTitle}>MCU TEMPERATURE:</Text>
-          <Text style={styles.propertyTitle}> 25 °C</Text>
+          <Text style={styles.propertyTitle}> {temperature ?? '?'} °C</Text>
         </View>
         <View style={styles.property}>
           {

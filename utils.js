@@ -22,9 +22,12 @@ export function base64StrToBinaryArray(value) {
   return Buffer.from(value, 'base64');
 }
 
-export function base64StrToNumber(value){
+export function base64StrToUInt8(value){
   return base64StrToBinaryArray(value).readUInt8();
+}
 
+export function base64StrToInt32(value){
+  return base64StrToBinaryArray(value).readInt32LE();
 }
 
 export function binaryArrayToBase64Str(value) {

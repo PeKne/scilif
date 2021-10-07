@@ -14,7 +14,7 @@ export default function SettingsScreen({
   navigation,
   device, setSelectedDevice,
   disconnectDevice,
-  writeDimLED, readDimLED, readBatteryLevel, readBatteryCharge,
+  writeDimLED, readDimLED, readBatteryLevel, readBatteryCharge, readTemperature,
   monitorCharacteristic,
    ...props
 
@@ -71,7 +71,7 @@ export default function SettingsScreen({
   const monitorDimLEDHandler = () => {
     subscription.current = monitorCharacteristic(device.getDimLEDCharacteristic(), (value) => {
       console.log("Dim LED, value has changed.", utils.base64StrToHexStr(value));
-      let dimLEDMode = utils.base64StrToNumber(value);
+      let dimLEDMode = utils.base64StrToUInt8(value);
       dispatchMode(modeActionLookup(dimLEDMode));
     });
   }
@@ -116,6 +116,7 @@ export default function SettingsScreen({
             device={device}
             readBatteryLevel={readBatteryLevel}
             readBatteryCharge={readBatteryCharge}
+            readTemperature={readTemperature}
             monitorCharacteristic={monitorCharacteristic}
           /> 
           : <ActivityIndicator size="large" />
