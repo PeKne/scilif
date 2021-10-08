@@ -6,13 +6,14 @@ import Dialog from "react-native-dialog";
 
 import BatteryIndicator from './BatteryIndicator';
 
-import * as utils from '../utils';
+import * as utils from '../services/UtilsService';
 import * as BLE from '../ble-constants';
 
 export default function DeviceCard({ device, readBatteryLevel, readBatteryCharge, readTemperature, monitorCharacteristic, ...props }) {
 
   const [batteryCharge, setBatteryCharge] = useState(null);
   const [temperature, setTemperature] = useState(null);
+
   const [promptVisible, setPromptVisible] = useState(false);
   const [deviceName, setDeviceName] = useState(device.device.name);
   const [dialogInput, setDialogInput] = useState(device.device.name);
@@ -86,7 +87,6 @@ export default function DeviceCard({ device, readBatteryLevel, readBatteryCharge
       monitorBatteryChargeHandler();
       // periodically read temperature
       pollTemperatureHandler();
-
 
       return () => { // tear down function
         if (pollInterval.current)
@@ -166,5 +166,5 @@ const styles = StyleSheet.create({
   batteryNotCharging: {
     fontSize: 16,
     color: "#ff0000",
-  }
+  },
 });

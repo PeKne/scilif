@@ -8,7 +8,7 @@ import { colors } from '../styles/theme';
 
 import DeviceCard from '../components/DeviceCard';
 
-import * as utils from '../utils';
+import * as utils from '../services/UtilsService';
 
 export default function SettingsScreen({
   navigation,
@@ -142,14 +142,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   buttonWrapper: {
-    marginHorizontal: '15%',
+    marginHorizontal: '10%',
     marginVertical: '5%',
   },
   text: {
     textAlign: 'center',
   },
   deviceInfoWrapper: {
-    marginHorizontal: '5%',
+    marginHorizontal: '10%',
     minHeight: '5%',
     textAlign: 'center',
     justifyContent: 'center',

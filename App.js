@@ -12,8 +12,9 @@ import SettingsScreen from './screens/SettingsScreen';
 import theme from './styles/theme';
 
 import * as BLE from './ble-constants';
-import * as utils from './utils';
-import { SunFibreDevice } from './models/sun-fibre-device';
+import * as utils from './services/UtilsService';
+import { SunFibreDevice } from './models/SunFibreDevice';
+import { requestLocationPermission } from './services/PermissionsService';
 
 export default function App() {
   const Stack = createStackNavigator();
@@ -25,6 +26,9 @@ export default function App() {
 
   // scanning (connections card is opened)
   const [scanning, setScanning] = useState(false);
+  // permissions granted
+  const [permissionsGranted, setPermissionsGranted] = useState(false);
+
 
   const devicesReducer = (devices, action) => {
     switch (action.type) {
@@ -34,7 +38,7 @@ export default function App() {
        */
       case 'SCANNED_DEVICE': {
         const device = action.payload;
-        const existingDevice = devices.find((sfd) => sfd.getDevice().id == device.id);
+        const existingDevice = devices.find((sfd) => sfd.getMAC() == device.id);
 
         // if (!existingDevice && device.isConnectable) {
         if (!existingDevice) {
@@ -51,7 +55,7 @@ export default function App() {
 
       case 'CONNECTED_DEVICE': {
         const { device } = action.payload;
-        const existingDevice = devices.find((sfd) => sfd.getDevice().id == device.id);
+        const existingDevice = devices.find((sfd) => sfd.getBLEDevice().id == device.id);
 
         if (!existingDevice) throw new Error('Device is not in devices list!');
 
@@ -62,7 +66,7 @@ export default function App() {
 
       case 'DISCONNECTED_DEVICE': {
         const device = action.payload;
-        const existingDevice = devices.find((sfd) => sfd.getDevice().id == device.id);
+        const existingDevice = devices.find((sfd) => sfd.getBLEDevice().id == device.id);
 
         if (!existingDevice) throw new Error('Device is not in devices list!');
 
@@ -87,24 +91,51 @@ export default function App() {
 
   // TODO: diconnect x connect should be probably wrapped by a promise too
 
+  useEffect(() => {
+
+    // create BLE manager
+    console.log('(BLE): New ble manager...');
+    const newManager = new BleManager();
+    const subscription = newManager.onStateChange((state) => {
+      if (state === 'PoweredOn') subscription.remove();
+    }, true);
+    setManager(newManager);
+
+    // check permissions
+    console.log("(BLE): Requesting permissions...");
+    requestLocationPermission().then((permissionsGranted) => {
+      setPermissionsGranted(permissionsGranted);
+      if (!permissionsGranted) 
+        console.warn("(BLE): Permissions not granted!!!");
+    });
+    
+
+  }, []);
+
+  useEffect(() => {
+    console.log('useEffect - devices', devices.length);
+  }, [devices]);
+
+
   /**
    * Establishes connection with BLE SunFibre device.
    *
    * @param {SunFibreDevice} sunFibreDevice
    */
-  const connectToSunFibreDevice = async (sunFibreDevice) => connect(sunFibreDevice.getDevice())
+  const connectToSunFibreDevice = async (sunFibreDevice) => connect(sunFibreDevice.getBLEDevice())
     .then((device) => getServicesAndCharacteristics(device))
     .then((deviceServicesAndCharacteristics) => {
       console.log('Services and Characteristics obtained.');
       dispatchDevices({
         type: 'CONNECTED_DEVICE',
         payload: {
-          device: sunFibreDevice.getDevice(),
+          device: sunFibreDevice.getBLEDevice(),
           servicesCharacteristics: deviceServicesAndCharacteristics,
         },
       });
       console.log('Device connected');
-    });
+    })
+    .catch((error) => {throw new Error(error)});
 
   /**
    * Close the connection with BLE SunFibre device.
@@ -112,7 +143,7 @@ export default function App() {
    * @param {SunFibreDevice} sunFibreDevice
    */
   const disconnectSunFibreDevice = (sunFibreDevice) => {
-    disconnect(sunFibreDevice.getDevice())
+    disconnect(sunFibreDevice.getBLEDevice())
       .then((device) => {
         dispatchDevices({
           type: 'DISCONNECTED_DEVICE',
@@ -121,27 +152,6 @@ export default function App() {
         console.log('Device disconnected');
       });
   };
-
-  useEffect(() => {
-    console.log('New ble manager...');
-    const newManager = new BleManager();
-    // newManager.setLogLevel(LogLevel.Debug);
-    const subscription = newManager.onStateChange((state) => {
-      console.log('BLE Manager: monitor state', state);
-      if (state === 'PoweredOn') {
-        // scanAndConnect();
-        subscription.remove();
-      }
-    }, true);
-
-    setManager(newManager);
-    // dispatchDevices({ type: 'CLEAR' });
-  }, []);
-
-  useEffect(() => {
-    console.log('useEffect - devices', devices.length);
-  }, [devices]);
-
   // #region LAYER: sun fibre device
   /**
    * Promise to write dim LED char.
@@ -153,7 +163,7 @@ export default function App() {
     const ch = sunFibreDevice.getDimLEDCharacteristic();
     if (!ch) throw new Error("Device does not possesses requested characteristic!");
 
-    return writeCharacteristics(sunFibreDevice.getDevice(), ch, value);
+    return writeCharacteristics(sunFibreDevice.getBLEDevice(), ch, value);
   }
 
   /**
@@ -167,7 +177,7 @@ export default function App() {
     const ch = sunFibreDevice.getDimLEDCharacteristic();
     if (!ch) throw new Error("Device does not possesses requested characteristic!");
 
-    return readCharacteristics(sunFibreDevice.getDevice(), ch).then(
+    return readCharacteristics(sunFibreDevice.getBLEDevice(), ch).then(
       value => utils.base64StrToUInt8(value)
     );
   }
@@ -182,7 +192,7 @@ export default function App() {
     const ch = sunFibreDevice.getBatteryLevelCharacteristic();
     if (!ch) throw new Error("Device does not possesses requested characteristic!");
 
-    return readCharacteristics(sunFibreDevice.getDevice(), ch).then(
+    return readCharacteristics(sunFibreDevice.getBLEDevice(), ch).then(
       value => utils.base64StrToUInt8(value)
     );
   }
@@ -192,7 +202,7 @@ export default function App() {
     const ch = sunFibreDevice.getBatteryChargeCharacteristic();
     if (!ch) throw new Error("Device does not possesses requested characteristic!");
 
-    return readCharacteristics(sunFibreDevice.getDevice(), ch).then(
+    return readCharacteristics(sunFibreDevice.getBLEDevice(), ch).then(
       value => utils.base64StrToUInt8(value)
     );
   }
@@ -202,74 +212,15 @@ export default function App() {
     const ch = sunFibreDevice.getTemperatureCharacteristic();
     if (!ch) throw new Error("Device does not possesses requested characteristic!");
 
-    return readCharacteristics(sunFibreDevice.getDevice(), ch).then(
+    return readCharacteristics(sunFibreDevice.getBLEDevice(), ch).then(
       value => utils.base64StrToInt32(value)
     );
   }
-
   // #endregion
 
 
 
   // #region LAYER: ble-plx
-
-  function monitorCharacteristic(characteristic, onCharacteristicValueChange){
-    return characteristic.monitor((error, characteristic) => {
-      if (error === null){
-        console.log(`(BLE): Monitor ${characteristic.uuid}, value has changed: ${utils.base64StrToHexStr(characteristic.value)}`);
-        onCharacteristicValueChange(characteristic.value);
-      }
-      else if (error.message === "Operation was cancelled") return;
-      else 
-        console.error(error);
-    })
-  }
-
-
-  function connect(device) {
-    return new Promise(async (resolve, reject) => {
-      // let isConnected = await device.isConnected();
-      // console.log("device: isConnected: %d", isConnected);
-      // if (isConnected) reject();
-
-      try {
-        // wait until connected
-        await device.connect();
-        console.log(`BLE: Device ${device.name} connected...`);
-
-        resolve(device);
-      } catch (error) {
-        console.error('ERROR (BLE) connect:', error);
-
-        // disconnect
-        const isConnected = await device.isConnected();
-        console.log('BLE: Device isConnected: %d', isConnected);
-        if (isConnected) disconnect(device);
-
-        reject();
-      }
-    });
-  }
-
-  function disconnect(device) {
-    return new Promise(async (resolve, reject) => {
-      try {
-        await device.cancelConnection();
-        console.log(`BLE: Device ${device.name} disconnected...`);
-        resolve(device);
-      } catch (error) {
-        console.error('ERROR (BLE) disconnect:', error);
-        reject();
-      }
-    });
-  }
-
-  function stopScan(){
-    console.log("Stopping scanning...");
-    setScanning(false);
-    manager.stopDeviceScan();
-  }
-
   function startScan(){
     console.log('Scanning...');
 
@@ -313,6 +264,59 @@ export default function App() {
       });
     });
   }
+
+  function stopScan(){
+    console.log("Stopping scanning...");
+    setScanning(false);
+    manager.stopDeviceScan();
+  }
+
+  function connect(device) {
+    return new Promise(async (resolve, reject) => {
+
+      //TODO: check wheter connected
+      // let isConnected = await device.isConnected();
+      // console.log("device: isConnected: %d", isConnected);
+      // if (isConnected) reject();
+
+      try {
+        // wait until connected
+        await device.connect({timeout: BLE.DEVICE_CONNECT_TIMEOUT});
+        console.log(`BLE: Device ${device.name} connected...`);
+        resolve(device);
+      }
+      catch (error) {
+        if (error.message === "Operation was cancelled")
+          console.warn('WARN (BLE) connection timeout');
+        else
+          console.error('ERROR (BLE) connect:', error);
+        reject();
+      }
+    });
+  }
+
+  function disconnect(device) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        await device.cancelConnection();
+        console.log(`BLE: Device ${device.name} disconnected...`);
+        resolve(device);
+      } catch (error) {
+        console.error('ERROR (BLE) disconnect:', error);
+        reject();
+      }
+    });
+  }
+
+  //TODO: make this work
+  function monitorDisconnection(device){
+    console.log('Listening disconnection...');
+    return manager.onDeviceDisconnected(device.id, (error, device) => {
+      console.log(`(BLE): Device ${device.name} has been disconnected`);
+      console.log("Error: ", error);
+    });
+  }
+
 
   function getServicesAndCharacteristics(device) {
     console.log('BLE: Getting services & characteristics...');
@@ -376,15 +380,17 @@ export default function App() {
     });
   }
 
-  //TODO: make this work
-  function monitorDisconnection(device){
-    console.log('Listening disconnection...');
-    return manager.onDeviceDisconnected(device.id, (error, device) => {
-      console.log(`(BLE): Device ${device.name} has been disconnected`);
-      console.log("Error: ", error);
-    });
+  function monitorCharacteristic(characteristic, onCharacteristicValueChange){
+    return characteristic.monitor((error, characteristic) => {
+      if (error === null){
+        console.log(`(BLE): Monitor ${characteristic.uuid}, value has changed: ${utils.base64StrToHexStr(characteristic.value)}`);
+        onCharacteristicValueChange(characteristic.value);
+      }
+      else if (error.message === "Operation was cancelled") return;
+      else 
+        console.error(error);
+    })
   }
-
   // #endregion
 
   return (
@@ -395,6 +401,7 @@ export default function App() {
           <Stack.Screen name="Intro">{(props) =>
             <IntroScreen {...props}
               deviceConnected={!!selectedDevice}
+              permissionsGranted={permissionsGranted}
             />}
           </Stack.Screen>
 

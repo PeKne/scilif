@@ -22,8 +22,9 @@ const theme = {
     },
     h1Style: {
       color: colors.yellow,
-      fontSize: 28,
+      fontSize: 30,
       textAlign: 'center',
+      margin: 10
     },
   },
 

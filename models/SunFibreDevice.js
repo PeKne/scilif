@@ -12,8 +12,20 @@ export class SunFibreDevice{
     this.lastSeenTimestamp = Date.now();
   }
 
-  getDevice() {
+  getBLEDevice() {
     return this.device;
+  }
+
+  getRSSI(){
+    return this.device.rssi;
+  }
+
+  getName(){
+    return this.device.name;
+  }
+
+  getMAC(){
+    return this.device.id;
   }
 
   getLastSeenTimestamp(){
