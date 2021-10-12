@@ -24,7 +24,6 @@ export default function ConnectionsScreen({
   return (
 
     <View style={styles.screen}>
-      <Text>{devices.length}</Text>
       <StatusBar navigation={navigation} />
       <Text h1 style={styles.text}>Select Device:</Text>
       <DeviceList navigation={navigation} devices={devices}

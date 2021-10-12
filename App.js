@@ -4,6 +4,10 @@ import { ThemeProvider } from 'react-native-elements';
 import { BleManager } from 'react-native-ble-plx';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
+import AppLoading from 'expo-app-loading';
+import * as Font from 'expo-font';
+import { FontAwesome } from '@expo/vector-icons';
+import { Asset } from 'expo-asset';
 
 import IntroScreen from './screens/IntroScreen';
 import ConnectionsScreen from './screens/ConnectionsScreen';
@@ -18,6 +22,7 @@ import { requestLocationPermission } from './services/PermissionsService';
 
 export default function App() {
   const Stack = createStackNavigator();
+  const [resourcesLoaded, setResourcesLoaded] = useState(false);
 
   const [manager, setManager] = useState(null);
 
@@ -105,10 +110,10 @@ export default function App() {
     console.log("(BLE): Requesting permissions...");
     requestLocationPermission().then((permissionsGranted) => {
       setPermissionsGranted(permissionsGranted);
-      if (!permissionsGranted) 
+      if (!permissionsGranted)
         console.warn("(BLE): Permissions not granted!!!");
     });
-    
+
 
   }, []);
 
@@ -135,7 +140,7 @@ export default function App() {
       });
       console.log('Device connected');
     })
-    .catch((error) => {throw new Error(error)});
+    .catch((error) => { throw new Error(error) });
 
   /**
    * Close the connection with BLE SunFibre device.
@@ -172,7 +177,7 @@ export default function App() {
    * @returns readPromise: Promise<number>
    */
 
-  function readDimLEDCharacteristics(sunFibreDevice){
+  function readDimLEDCharacteristics(sunFibreDevice) {
     console.log("Reading Dim LED char.");
     const ch = sunFibreDevice.getDimLEDCharacteristic();
     if (!ch) throw new Error("Device does not possesses requested characteristic!");
@@ -221,7 +226,7 @@ export default function App() {
 
 
   // #region LAYER: ble-plx
-  function startScan(){
+  function startScan() {
     console.log('Scanning...');
 
     manager.startDeviceScan(null, { allowDuplicates: false }, (error, device) => {
@@ -231,7 +236,7 @@ export default function App() {
       }
       if (device === null || !device.name) return;
 
-      if (BLE.DEVICE_NAMES.find(dn => device.name.startsWith(dn))){
+      if (BLE.DEVICE_NAMES.find(dn => device.name.startsWith(dn))) {
         // console.log(`${device.name} scanned!`);
         dispatchDevices({ type: 'SCANNED_DEVICE', payload: device });
       }
@@ -265,7 +270,7 @@ export default function App() {
     });
   }
 
-  function stopScan(){
+  function stopScan() {
     console.log("Stopping scanning...");
     setScanning(false);
     manager.stopDeviceScan();
@@ -281,7 +286,7 @@ export default function App() {
 
       try {
         // wait until connected
-        await device.connect({timeout: BLE.DEVICE_CONNECT_TIMEOUT});
+        await device.connect({ timeout: BLE.DEVICE_CONNECT_TIMEOUT });
         console.log(`BLE: Device ${device.name} connected...`);
         resolve(device);
       }
@@ -309,7 +314,7 @@ export default function App() {
   }
 
   //TODO: make this work
-  function monitorDisconnection(device){
+  function monitorDisconnection(device) {
     console.log('Listening disconnection...');
     return manager.onDeviceDisconnected(device.id, (error, device) => {
       console.log(`(BLE): Device ${device.name} has been disconnected`);
@@ -380,63 +385,82 @@ export default function App() {
     });
   }
 
-  function monitorCharacteristic(characteristic, onCharacteristicValueChange){
+  function monitorCharacteristic(characteristic, onCharacteristicValueChange) {
     return characteristic.monitor((error, characteristic) => {
-      if (error === null){
+      if (error === null) {
         console.log(`(BLE): Monitor ${characteristic.uuid}, value has changed: ${utils.base64StrToHexStr(characteristic.value)}`);
         onCharacteristicValueChange(characteristic.value);
       }
       else if (error.message === "Operation was cancelled") return;
-      else 
+      else
         console.error(error);
     })
   }
   // #endregion
 
   return (
-    <ThemeProvider theme={theme}>
-      <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false, gestureEnabled: false }}>
+    !resourcesLoaded ?
+      <AppLoading
+        startAsync={_fetchResources}
+        onFinish={() => setResourcesLoaded(true)}
+        onError={console.warn}
+      />
+      : <ThemeProvider theme={theme}>
+        <NavigationContainer>
+          <Stack.Navigator screenOptions={{ headerShown: false, gestureEnabled: false }}>
 
-          <Stack.Screen name="Intro">{(props) =>
-            <IntroScreen {...props}
-              deviceConnected={!!selectedDevice}
-              permissionsGranted={permissionsGranted}
-            />}
-          </Stack.Screen>
+            <Stack.Screen name="Intro">{(props) =>
+              <IntroScreen {...props}
+                deviceConnected={!!selectedDevice}
+                permissionsGranted={permissionsGranted}
+              />}
+            </Stack.Screen>
 
-          <Stack.Screen name="Connections">{(props) => 
-            <ConnectionsScreen {...props}
-              startScanDevices={startScan}
-              stopScanDevices={stopScan}
-              clearDevices={() => dispatchDevices({type: 'CLEAR'})}
-              connectDevice={connectToSunFibreDevice}
-              monitorDisconnection={monitorDisconnection}
-              devices={devices}
-              setSelectedDevice={setSelectedDevice}
+            <Stack.Screen name="Connections">{(props) =>
+              <ConnectionsScreen {...props}
+                startScanDevices={startScan}
+                stopScanDevices={stopScan}
+                clearDevices={() => dispatchDevices({ type: 'CLEAR' })}
+                connectDevice={connectToSunFibreDevice}
+                monitorDisconnection={monitorDisconnection}
+                devices={devices}
+                setSelectedDevice={setSelectedDevice}
 
-            />}
-          </Stack.Screen>
+              />}
+            </Stack.Screen>
 
-          <Stack.Screen name="Settings">{(props) => 
-            <SettingsScreen {...props}
-              device={selectedDevice}
-              setSelectedDevice={setSelectedDevice}
-              disconnectDevice={disconnectSunFibreDevice}
-              writeDimLED={writeDimLEDCharacteristics}
-              readDimLED={readDimLEDCharacteristics}
-              readBatteryLevel={readBatteryLevelCharacteristics}
-              readBatteryCharge={readBatteryChargeCharacteristics}
-              readTemperature={readTempratureCharacteristics}
-              monitorCharacteristic={monitorCharacteristic}
-            />}
-          </Stack.Screen>
+            <Stack.Screen name="Settings">{(props) =>
+              <SettingsScreen {...props}
+                device={selectedDevice}
+                setSelectedDevice={setSelectedDevice}
+                disconnectDevice={disconnectSunFibreDevice}
+                writeDimLED={writeDimLEDCharacteristics}
+                readDimLED={readDimLEDCharacteristics}
+                readBatteryLevel={readBatteryLevelCharacteristics}
+                readBatteryCharge={readBatteryChargeCharacteristics}
+                readTemperature={readTempratureCharacteristics}
+                monitorCharacteristic={monitorCharacteristic}
+              />}
+            </Stack.Screen>
 
-        </Stack.Navigator>
-      </NavigationContainer>
-    </ThemeProvider>
+          </Stack.Navigator>
+        </NavigationContainer>
+      </ThemeProvider>
   );
 }
+
+  // Preloads static resources before displaying incomplete APP
+  const _fetchResources =async () => {
+    const images = [require('./resources/images/logo.jpg')];
+    const fonts = [FontAwesome.font];
+
+    const fontAssets = fonts.map(font => Font.loadAsync(font));
+
+    const imageAssets = images.map(image => {
+      return Asset.fromModule(image).downloadAsync();
+    }); 
+    return Promise.all([...imageAssets, ...fontAssets]);
+  }
 
 const styles = StyleSheet.create({
   container: {

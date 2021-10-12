@@ -1,5 +1,3 @@
-import { Card } from 'react-native-elements/dist/card/Card';
-
 export const colors = {
   primary: '#ffffff',
   secondary: '#000000',
@@ -39,7 +37,7 @@ const theme = {
       borderColor: colors.primary,
     },
     containerStyle: {
-      marginVertical: 10,
+      marginVertical: 5,
     },
   },
 
@@ -51,7 +49,7 @@ const theme = {
     },
     wrapperStyle: {
       padding: 0,
-      margin: 15,
+      margin: 5,
       backgroundColor: colors.secondary,
     },
 

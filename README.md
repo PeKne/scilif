@@ -13,7 +13,7 @@ Project is configured and tested running on physical Iphone SE device.
 - [x] add rssi ... device.getRssi()
 - [x] add mac address ... device.getId()
 - [x] select button green if device isConnected .... device.isConnected()
-- [ ] add support for user defined names of devices (saved in app storage)
+- [x] add support for user defined names of devices (saved in app storage)
 
 
 [TESTING]

@@ -16,7 +16,7 @@ export default function IntroScreen({ navigation, deviceConnected, permissionsGr
         SunFibre Wearable Active Lighting Technology is a unique optic fibre lighting system that increases visibility in darkness or lowlight conditions. Unlike retroreflective safety elements, SCILIF SunFibre emits light through optic fibres encased in a textile coating, ensuring active protection. Side-emitting optic fibres provide visibility in all directions up to a distance of 3 kilometres. The properties of the textile coated optic fibre allow easy sewing into textile products and guaranteed mechanical durability and washability. The system is easy to operate and recharge.
       </Text>
 
-      <Button disabled={!permissionsGranted} onPress={() => { navigation.navigate(deviceConnected ? 'Settings' : 'Connections'); }} title={`${deviceConnected ? 'control' : 'connect'} device`} titleStyle={styles.buttonTitle} />
+      <Button disabled={!permissionsGranted} onPress={() => { navigation.navigate(deviceConnected ? 'Settings' : 'Connections'); }} title="Control Device" titleStyle={styles.buttonTitle} />
     </View>
   );
 }

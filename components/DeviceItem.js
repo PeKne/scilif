@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { ListItem, Icon, Text } from 'react-native-elements';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Dialog from "react-native-dialog";
 
 import {colors} from '../styles/theme';
@@ -10,6 +11,7 @@ export default function DeviceItem({
 }) {
 
   const [connectionErrorDialogVisible, setConnectionErrorDialogVisible] = useState(false);
+  const [deviceName, setDeviceName] = useState(deviceListItem.item.getName());
 
   const onDisconnectedSubscription = useRef(null);
 
@@ -52,6 +54,19 @@ export default function DeviceItem({
     } 
   }, []);
 
+  useEffect(() => {
+    const fetchDeviceName = async () => {
+      const storedName = await readDeviceName(deviceListItem.item.getMAC());
+      if (storedName) {
+        setDeviceName(storedName)
+      }
+    }
+    fetchDeviceName()
+  }, [deviceListItem])
+
+  const readDeviceName = async (device_mac) => {
+    return await AsyncStorage.getItem(`@DEVICE__NAME:${device_mac}`)
+  }
 
   return (
     <>
@@ -64,7 +79,7 @@ export default function DeviceItem({
         containerStyle={styles.listItemContainer}
       >
         <ListItem.Content style={styles}>
-          <ListItem.Title>{deviceListItem.item.getName()}</ListItem.Title>
+          <ListItem.Title>{deviceName}</ListItem.Title>
           <Text>MAC: {deviceListItem.item.getMAC()}</Text>
           <Text>RSSI: {deviceListItem.item.getRSSI()} dBm</Text>
         </ListItem.Content>

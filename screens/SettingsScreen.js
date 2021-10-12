@@ -16,7 +16,7 @@ export default function SettingsScreen({
   disconnectDevice,
   writeDimLED, readDimLED, readBatteryLevel, readBatteryCharge, readTemperature,
   monitorCharacteristic,
-   ...props
+  ...props
 
 }) {
 
@@ -42,12 +42,12 @@ export default function SettingsScreen({
   };
 
   const modeActionLookup = (mode) => {
-    switch(mode){
+    switch (mode) {
       case 0x0: return 'SET_OFF';
       case 0x1: return 'SET_ON_STRONG';
       case 0x2: return 'SET_ON_MILD';
       case 0x3: return 'SET_FLASH';
-      default:  return 'SET_UNKNOWN';
+      default: return 'SET_UNKNOWN';
     }
   }
   // mode of device
@@ -62,7 +62,7 @@ export default function SettingsScreen({
       let dimLEDMode = await readDimLED(device);
       dispatchMode(modeActionLookup(dimLEDMode));
     }
-    catch(error){
+    catch (error) {
       console.warn("Error in reading Dim LED mode");
       dispatchBattery('SET_UNKNOWN');
     }
@@ -91,13 +91,13 @@ export default function SettingsScreen({
   // unselect device at the end
   useEffect(() => {
 
-    if (device){
+    if (device) {
       readDimLEDHandler();
       monitorDimLEDHandler();
     }
 
     return () => {
-      if (subscription.current){
+      if (subscription.current) {
         console.debug("Dim LED subscription removed");
         subscription.current.remove();
       }
@@ -111,14 +111,14 @@ export default function SettingsScreen({
       <Text h1>Device Control</Text>
 
       <View style={styles.deviceInfoWrapper}>
-        {device ? 
-          <DeviceCard 
+        {device ?
+          <DeviceCard
             device={device}
             readBatteryLevel={readBatteryLevel}
             readBatteryCharge={readBatteryCharge}
             readTemperature={readTemperature}
             monitorCharacteristic={monitorCharacteristic}
-          /> 
+          />
           : <ActivityIndicator size="large" />
         }
       </View>
@@ -139,18 +139,16 @@ const styles = StyleSheet.create({
   screen: {
     backgroundColor: '#000',
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'space-between'
   },
   buttonWrapper: {
     marginHorizontal: '10%',
-    marginVertical: '5%',
   },
   text: {
     textAlign: 'center',
   },
   deviceInfoWrapper: {
     marginHorizontal: '10%',
-    minHeight: '5%',
     textAlign: 'center',
     justifyContent: 'center',
   },

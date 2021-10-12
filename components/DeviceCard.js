@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Card, Text, Icon } from 'react-native-elements';
-// import AsyncStorage from '@react-native-async-storage/async-storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Dialog from "react-native-dialog";
 
 import BatteryIndicator from './BatteryIndicator';
@@ -21,6 +21,17 @@ export default function DeviceCard({ device, readBatteryLevel, readBatteryCharge
   const subscription = useRef(null);
   const pollInterval = useRef(null);
 
+  useEffect(() => {
+    const fetchDeviceName = async () => {
+      const storedName = await readDeviceName(device.getMAC());
+      if (storedName) {
+        setDeviceName(storedName)
+        setDialogInput(storedName)
+      }
+    }
+    fetchDeviceName()
+  }, [device])
+
   const pollTemperatureHandler = () => {
     pollInterval.current = setInterval(() => readTemperatureHandler(), BLE.TEMPERATURE_REFRESH_INTERVAL); // periodically read battery
   }
@@ -35,16 +46,17 @@ export default function DeviceCard({ device, readBatteryLevel, readBatteryCharge
 
   const handleDialogSubmit = async () => {
     hideDialog();
-    // await AsyncStorage.setItem(f`@DEVICE:${device.device.id}`, value)
+    await storeDeviceName(device.getMAC(), dialogInput)
+    const value = await AsyncStorage.getItem('@storage_Key')
     setDeviceName(dialogInput)
   }
 
-  const storeData = async (value) => {
-    try {
-      await AsyncStorage.setItem('@storage_Key', value)
-    } catch (e) {
-      // saving error  
-    }
+  const storeDeviceName = async (device_mac, nickname) => {
+    await AsyncStorage.setItem(`@DEVICE__NAME:${device_mac}`, nickname)
+  }
+
+  const readDeviceName = async (device_mac) => {
+    return await AsyncStorage.getItem(`@DEVICE__NAME:${device_mac}`)
   }
 
   const monitorBatteryChargeHandler = () => {
@@ -71,7 +83,7 @@ export default function DeviceCard({ device, readBatteryLevel, readBatteryCharge
       let temperature = await readTemperature(device);
       setTemperature(temperature);
     }
-    catch(error){
+    catch (error) {
       console.warn("Error in reading temperature");
       setTemperature(null);
     }
@@ -126,13 +138,13 @@ export default function DeviceCard({ device, readBatteryLevel, readBatteryCharge
         </View>
 
       </Card>
-      <Dialog.Container onBackdropPress={hideDialog} visible={promptVisible}> 
+      <Dialog.Container onBackdropPress={hideDialog} visible={promptVisible}>
         <Dialog.Title>Rename device</Dialog.Title>
         <Dialog.Description>
           Please enter new name of the device
         </Dialog.Description>
         <Dialog.Input onChangeText={setDialogInput} value={dialogInput} />
-        <Dialog.Button label="Save" onPress={handleDialogSubmit}/>
+        <Dialog.Button label="Save" onPress={handleDialogSubmit} />
         <Dialog.Button label="Cancel" onPress={hideDialog} />
       </Dialog.Container>
     </>
