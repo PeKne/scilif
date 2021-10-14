@@ -85,7 +85,7 @@ export default function App() {
         return action.payload;
       case 'CLEAR':
         console.log("Clearing devices...");
-        return [];
+        return devices.filter((dev) => dev.isConnected());
       default:
         throw new Error('Unsupported devicesReducer action received.');
     }
