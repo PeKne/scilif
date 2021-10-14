@@ -360,7 +360,7 @@ export default function App() {
   function writeCharacteristics(device, characteristic, value) {
     return new Promise(async (resolve, reject) => {
       try {
-        await characteristic.writeWithoutResponse(utils.binaryArrayToBase64Str([value]));
+        await characteristic.writeWithResponse(utils.binaryArrayToBase64Str([value]));
         resolve(characteristic);
       } catch (error) {
         console.error("ERROR (BLE) writeCharacteristics:", error);
