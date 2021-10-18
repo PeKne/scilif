@@ -3,10 +3,10 @@ import { StyleSheet, View } from 'react-native';
 import { Text, Icon } from 'react-native-elements';
 import { colors } from '../styles/theme';
 
-import * as BLE from '../ble-constants';
+import * as BLE from '../services/BLEService';
 
 //TODO: move this to DeviceCardr
-export default function BatteryIndicator({ device, readBatteryLevel, ...props }) {
+export default function BatteryIndicator({ device, ...props }) {
 
   const batteryReducer = (prevState, action) => {
     switch (action) {
@@ -30,7 +30,7 @@ export default function BatteryIndicator({ device, readBatteryLevel, ...props })
 
   const readBatteryLevelHandler = async () => {
     try {
-      let batteryLevel = await readBatteryLevel(device);
+      let batteryLevel = await device.readBatteryLevelCharacteristics();
       dispatchBattery(batteryLevel);
     }
     catch(error){
@@ -38,6 +38,10 @@ export default function BatteryIndicator({ device, readBatteryLevel, ...props })
       dispatchBattery(-1);
     }
   };
+
+  const clearHandler = () => {
+    
+  }
 
   useEffect(() => {
     if (device) {

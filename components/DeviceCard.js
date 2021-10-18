@@ -7,9 +7,9 @@ import Dialog from "react-native-dialog";
 import BatteryIndicator from './BatteryIndicator';
 
 import * as utils from '../services/UtilsService';
-import * as BLE from '../ble-constants';
+import * as BLE from '../services/BLEService';
 
-export default function DeviceCard({ device, readBatteryLevel, readBatteryCharge, readTemperature, monitorCharacteristic, ...props }) {
+export default function DeviceCard({ device, ...props }) {
 
   const [batteryCharge, setBatteryCharge] = useState(null);
   const [temperature, setTemperature] = useState(null);
@@ -60,7 +60,7 @@ export default function DeviceCard({ device, readBatteryLevel, readBatteryCharge
   }
 
   const monitorBatteryChargeHandler = () => {
-    subscription.current = monitorCharacteristic(device.getBatteryChargeCharacteristic(), (value) => {
+    subscription.current = BLE.monitorCharacteristic(device.getBatteryChargeCharacteristic(), (value) => {
       console.log("Battery charge, value has changed.", utils.base64StrToHexStr(value));
       let batteryCharge = utils.base64StrToUInt8(value);
       setBatteryCharge(batteryCharge);
@@ -69,7 +69,7 @@ export default function DeviceCard({ device, readBatteryLevel, readBatteryCharge
 
   const readBatteryChargeHandler = async () => {
     try {
-      let batteryCharge = await readBatteryCharge(device);
+      let batteryCharge = await device.readBatteryChargeCharacteristics();
       setBatteryCharge(batteryCharge);
     }
     catch (error) {
@@ -80,11 +80,12 @@ export default function DeviceCard({ device, readBatteryLevel, readBatteryCharge
 
   const readTemperatureHandler = async () => {
     try {
-      let temperature = await readTemperature(device);
+      let temperature = await device.readTempratureCharacteristics();
       setTemperature(temperature);
     }
     catch (error) {
       console.warn("Error in reading temperature");
+      console.error(error)
       setTemperature(null);
     }
   };
@@ -118,20 +119,20 @@ export default function DeviceCard({ device, readBatteryLevel, readBatteryCharge
         <Card.Divider />
         <View style={styles.layout}>
           <View style={styles.property}>
-            <Text style={styles.propertyTitle}>BATTERY LEVEL:</Text>
-            <BatteryIndicator device={device} readBatteryLevel={readBatteryLevel} />
+            <Text style={styles.propertyTitle}>Battery Level:</Text>
+            <BatteryIndicator device={device}/>
           </View>
           <View style={styles.property}>
-            <Text style={styles.propertyTitle}>MCU TEMPERATURE:</Text>
+            <Text style={styles.propertyTitle}>MCU Temperature:</Text>
             <Text style={styles.propertyTitle}> {temperature ?? '?'} °C</Text>
           </View>
           <View style={styles.property}>
             {
               batteryCharge !== null ?
                 batteryCharge ?
-                  <Text style={styles.batteryCharging}> CHARGING DEVICE {"\n"} </Text>
+                  <Text style={styles.batteryCharging}> Charging Device{"\n"} </Text>
                   :
-                  <Text style={styles.batteryNotCharging}>DEVICE ON BATTERY {"\n"}</Text>
+                  <Text style={styles.batteryNotCharging}>Device On Battery{"\n"}</Text>
                 : null
             }
           </View>

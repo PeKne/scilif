@@ -22,7 +22,6 @@ const theme = {
       color: colors.yellow,
       fontSize: 30,
       textAlign: 'center',
-      margin: 10
     },
   },
 

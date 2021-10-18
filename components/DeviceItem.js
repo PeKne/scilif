@@ -7,13 +7,11 @@ import Dialog from "react-native-dialog";
 import {colors} from '../styles/theme';
 
 export default function DeviceItem({
-  deviceListItem, navigation, connectDevice, monitorDisconnection, setSelectedDevice, ...props
+  deviceListItem, navigation, connectDevice, setSelectedDevice, ...props
 }) {
 
   const [connectionErrorDialogVisible, setConnectionErrorDialogVisible] = useState(false);
   const [deviceName, setDeviceName] = useState(deviceListItem.item.getName());
-
-  const onDisconnectedSubscription = useRef(null);
 
   const showConnectionErrorDialog = () => {
     setConnectionErrorDialogVisible(true);
@@ -27,32 +25,25 @@ export default function DeviceItem({
     // extract SunFibreDevice object from list item
     let sfd = deviceListItem.item;
     // set device as selected
-    console.log("Setting selected device...", sfd.getName(), sfd.getMAC(), sfd.getRSSI());
+    console.log("(Connections-screen): Setting selected device...", sfd.getName(), sfd.getMAC());
+
+    // select device at first
+    setSelectedDevice(sfd);
 
     // connect to device if it is not connected
     if (!sfd.isConnected()){
       try {
         await connectDevice(sfd);
-        onDisconnectedSubscription.current = monitorDisconnection(sfd.getBLEDevice());
       }
       catch(error){
-        console.error("(UI): Device cannot be connected");
+        console.error("(Connections-screen): Device cannot be connected");
         showConnectionErrorDialog();
         return;
       }
     }
-
-    setSelectedDevice(sfd);
     // navigate
     navigation.navigate('Settings');
   };
-
-  useEffect(() => {
-    return () => {
-      if (onDisconnectedSubscription.current)
-        onDisconnectedSubscription.current.remove();
-    } 
-  }, []);
 
   useEffect(() => {
     const fetchDeviceName = async () => {

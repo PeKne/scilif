@@ -1,86 +1,94 @@
-import React, { useEffect, useReducer, useRef } from 'react';
+import React, { useState, useEffect, useReducer, useRef } from 'react';
 import {
   StyleSheet, View, ActivityIndicator, SafeAreaView,
 } from 'react-native';
 import { Text, Button } from 'react-native-elements';
-import StatusBar from '../components/StatusBar';
-import { colors } from '../styles/theme';
+import Dialog from "react-native-dialog";
 
+
+import StatusBar from '../components/StatusBar';
 import DeviceCard from '../components/DeviceCard';
 
 import * as utils from '../services/UtilsService';
+import * as BLE from '../services/BLEService';
+
+import { colors } from '../styles/theme';
+
+
+const ON_DISCONNECT_DELAY = 3000;
+
+const DimLEDModes = {
+  OFF:        0x0,
+  ON_STRONG:  0x1,
+  ON_MILD:    0x2,
+  FLASH:      0x3,
+  UNKNOWN:    0x4,
+}
 
 export default function SettingsScreen({
   navigation,
   device, setSelectedDevice,
   disconnectDevice,
-  writeDimLED, readDimLED, readBatteryLevel, readBatteryCharge, readTemperature,
-  monitorCharacteristic,
-  ...props
-
+   ...props
 }) {
 
-  const modeReducer = (mode, action) => {
-    switch (action) {
-      case 'SET_OFF':
-        writeDimLED(device, 0x0);
-        return 'OFF';
-      case 'SET_ON_STRONG':
-        writeDimLED(device, 0x1);
-        return 'ON_STRONG';
-      case 'SET_ON_MILD':
-        writeDimLED(device, 0x2);
-        return 'ON_MILD';
-      case 'SET_FLASH':
-        writeDimLED(device, 0x3);
-        return 'FLASH';
-      case 'SET_UNKNOWN':
-        return 'UNKNOWN';
-      default:
-        throw new Error('Unsupported modeReducer action received.');
+  const dimLEDSubscription = useRef(null);
+  const disconnectSubscription = useRef(null);
+
+  const [mode, setMode] = useState(DimLEDModes.UNKNOWN);
+
+  const changeMode = async (newMode) => {
+    try {
+      await device.writeDimLEDCharacteristics(newMode);
+      setMode(newMode)
+    } 
+    catch(error){
+      console.error("(Settings-screen): Unhandled error", error.message);
     }
   };
 
-  const modeActionLookup = (mode) => {
-    switch (mode) {
-      case 0x0: return 'SET_OFF';
-      case 0x1: return 'SET_ON_STRONG';
-      case 0x2: return 'SET_ON_MILD';
-      case 0x3: return 'SET_FLASH';
-      default: return 'SET_UNKNOWN';
-    }
-  }
-  // mode of device
-  const [mode, dispatchMode] = useReducer(modeReducer, 'SET_UNKNOWN');
-
-  const subscription = useRef(null);
 
 
   //#region BLE Handlers
   const readDimLEDHandler = async () => {
     try {
-      let dimLEDMode = await readDimLED(device);
-      dispatchMode(modeActionLookup(dimLEDMode));
+      let dimLEDMode = await device.readDimLEDCharacteristics();
+      setMode(dimLEDMode);
     }
     catch (error) {
       console.warn("Error in reading Dim LED mode");
-      dispatchBattery('SET_UNKNOWN');
+      console.error(error);
+      setMode(DimLEDModes.UNKNOWN)
     }
   };
 
   const monitorDimLEDHandler = () => {
-    subscription.current = monitorCharacteristic(device.getDimLEDCharacteristic(), (value) => {
-      console.log("Dim LED, value has changed.", utils.base64StrToHexStr(value));
+    dimLEDSubscription.current = BLE.monitorCharacteristic(device.getDimLEDCharacteristic(), 
+    (value) => {
+      console.log("(Settings-screen): Dim LED, value has changed.", utils.base64StrToHexStr(value));
       let dimLEDMode = utils.base64StrToUInt8(value);
-      dispatchMode(modeActionLookup(dimLEDMode));
+      setMode(dimLEDMode);
     });
   }
 
   const disconnectHandler = () => {
     disconnectDevice(device);
-    navigation.navigate('Intro');
-    // TODO: popup message DEVICE DISCONNECTED
   };
+
+  const clearHandler = () => {
+    if (dimLEDSubscription.current){
+      console.debug("(Settings-screen): Dim LED subscription removed");
+      dimLEDSubscription.current.remove();
+      dimLEDSubscription.current = null;
+    }
+
+    if (disconnectSubscription.current){
+      console.debug("(Settings-screen): Disconnect subscription removed");
+      disconnectSubscription.current.remove();
+      disconnectSubscription.current = null;
+    }
+    setSelectedDevice(null); // tear down function
+  }
 
   //#endregion
 
@@ -88,50 +96,69 @@ export default function SettingsScreen({
   const OptionButton = (props) => <Button type="outline" disabledStyle={device ? styles.activatedButton : null} disabledTitleStyle={device ? styles.activeButtonTitle : null} {...props} />;
 
 
+  const [disconnectDialogVisible, setDisconnectDialogVisible] = useState(false);
+
+  const showDisconnectDialog = () => setDisconnectDialogVisible(true);
+
+  const closeDisconnectDialog = () => {
+    setDisconnectDialogVisible(false);
+    navigation.navigate('Connections');
+  }
+
+
   // unselect device at the end
   useEffect(() => {
-
-    if (device) {
+    if (device){
       readDimLEDHandler();
       monitorDimLEDHandler();
     }
-
     return () => {
-      if (subscription.current) {
-        console.debug("Dim LED subscription removed");
-        subscription.current.remove();
-      }
-      setSelectedDevice(null); // tear down function
+      clearHandler();
     }
   }, []);
 
+  // unselect device at the end
+  useEffect(() => {
+    if (device){
+      disconnectSubscription.current = BLE.monitorDisconnection(device.getBLEDevice(), () => {
+        console.log(`(Settings-screen): onDisconnectedSunFibreDevice ${device.getName()}`);
+        clearHandler();
+
+        showDisconnectDialog();
+        setTimeout(() => closeDisconnectDialog(), ON_DISCONNECT_DELAY);
+      })
+    }
+  }, [device]);
+
   return (
-    <SafeAreaView style={styles.screen}>
-      <StatusBar navigation={navigation} />
-      <Text h1>Device Control</Text>
+    <>
+      <SafeAreaView style={styles.screen}>
+        <StatusBar navigation={navigation} />
+        <Text h1>Device Control</Text>
 
-      <View style={styles.deviceInfoWrapper}>
-        {device ?
-          <DeviceCard
-            device={device}
-            readBatteryLevel={readBatteryLevel}
-            readBatteryCharge={readBatteryCharge}
-            readTemperature={readTemperature}
-            monitorCharacteristic={monitorCharacteristic}
-          />
-          : <ActivityIndicator size="large" />
-        }
-      </View>
+        <View style={styles.deviceInfoWrapper}>
+          {device ? 
+            <DeviceCard device={device}/>  : <ActivityIndicator size="large" />
+          }
+        </View>
 
-      <View style={styles.buttonWrapper}>
-        <OptionButton disabled={!device || mode === 'OFF'} title="OFF" onPress={() => dispatchMode('SET_OFF')} />
-        <OptionButton disabled={!device || mode === 'ON_STRONG'} title="ON STRONG" onPress={() => dispatchMode('SET_ON_STRONG')} />
-        <OptionButton disabled={!device || mode === 'ON_MILD'} title="ON MILD" onPress={() => dispatchMode('SET_ON_MILD')} />
-        <OptionButton disabled={!device || mode === 'FLASH'} title="FLASH MODE" onPress={() => dispatchMode('SET_FLASH')} />
-        <Button title="Disconnect" disabled={!device} titleStyle={styles.disconnectButtonTitle} onPress={disconnectHandler} />
-      </View>
+        <View style={styles.buttonWrapper}>
+          <OptionButton disabled={!device || mode === DimLEDModes.OFF} title="OFF" onPress={() => changeMode(DimLEDModes.OFF)} />
+          <OptionButton disabled={!device || mode === DimLEDModes.ON_STRONG} title="ON STRONG" onPress={() => changeMode(DimLEDModes.ON_STRONG)} />
+          <OptionButton disabled={!device || mode === DimLEDModes.ON_MILD} title="ON MILD" onPress={() => changeMode(DimLEDModes.ON_MILD)} />
+          <OptionButton disabled={!device || mode === DimLEDModes.FLASH} title="FLASH MODE" onPress={() => changeMode(DimLEDModes.FLASH)} />
+          <Button title="Disconnect" disabled={!device} titleStyle={styles.disconnectButtonTitle} onPress={disconnectHandler} />
+        </View>
+      </SafeAreaView>
 
-    </SafeAreaView>
+      {/* "ENABLE DISCONNECT POPUP" */}
+      <Dialog.Container visible={disconnectDialogVisible} onBackdropPress={closeDisconnectDialog}>
+        <Dialog.Title>DISCONNECTION</Dialog.Title>
+        <Dialog.Description>
+          Device was disconnected.
+        </Dialog.Description>
+      </Dialog.Container>
+    </>
   );
 }
 
@@ -139,7 +166,7 @@ const styles = StyleSheet.create({
   screen: {
     backgroundColor: '#000',
     flex: 1,
-    justifyContent: 'space-between'
+    justifyContent: 'space-around'
   },
   buttonWrapper: {
     marginHorizontal: '10%',
