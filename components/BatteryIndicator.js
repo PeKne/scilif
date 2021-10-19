@@ -34,7 +34,7 @@ export default function BatteryIndicator({ device, ...props }) {
       dispatchBattery(batteryLevel);
     }
     catch(error){
-      console.warn("Error in reading battery level");
+      console.warn("(Settings-screen): Error in reading battery", error.message);
       dispatchBattery(-1);
     }
   };

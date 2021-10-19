@@ -21,8 +21,9 @@ const DimLEDModes = {
   OFF:        0x0,
   ON_STRONG:  0x1,
   ON_MILD:    0x2,
-  FLASH:      0x3,
-  UNKNOWN:    0x4,
+  FLASH_SLOW: 0x3,
+  FLASH_FAST: 0x4,
+  UNKNOWN:    0x5,
 }
 
 export default function SettingsScreen({
@@ -56,8 +57,7 @@ export default function SettingsScreen({
       setMode(dimLEDMode);
     }
     catch (error) {
-      console.warn("Error in reading Dim LED mode");
-      console.error(error);
+      console.warn("(Settings-screen): Error in reading Dim LED mode", error.message);
       setMode(DimLEDModes.UNKNOWN)
     }
   };
@@ -146,7 +146,8 @@ export default function SettingsScreen({
           <OptionButton disabled={!device || mode === DimLEDModes.OFF} title="OFF" onPress={() => changeMode(DimLEDModes.OFF)} />
           <OptionButton disabled={!device || mode === DimLEDModes.ON_STRONG} title="ON STRONG" onPress={() => changeMode(DimLEDModes.ON_STRONG)} />
           <OptionButton disabled={!device || mode === DimLEDModes.ON_MILD} title="ON MILD" onPress={() => changeMode(DimLEDModes.ON_MILD)} />
-          <OptionButton disabled={!device || mode === DimLEDModes.FLASH} title="FLASH MODE" onPress={() => changeMode(DimLEDModes.FLASH)} />
+          <OptionButton disabled={!device || mode === DimLEDModes.FLASH_SLOW} title="FLASH SLOW" onPress={() => changeMode(DimLEDModes.FLASH_SLOW)} />
+          <OptionButton disabled={!device || mode === DimLEDModes.FLASH_FAST} title="FLASH FAST" onPress={() => changeMode(DimLEDModes.FLASH_FAST)} />
           <Button title="Disconnect" disabled={!device} titleStyle={styles.disconnectButtonTitle} onPress={disconnectHandler} />
         </View>
       </SafeAreaView>

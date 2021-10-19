@@ -103,14 +103,14 @@ export default function App() {
   // TODO: diconnect x connect should be probably wrapped by a promise too
 
   useEffect(() => {
-
     // create BLE manager
     console.log('(BLE): New ble manager...');
     const newManager = new BleManager();
+    setManager(newManager);
+
     const subscription = newManager.onStateChange((state) => {
       if (state === 'PoweredOn') subscription.remove();
     }, true);
-    setManager(newManager);
 
     // check permissions
     console.log("(BLE): Requesting permissions...");
@@ -121,8 +121,14 @@ export default function App() {
     });
   }, []);
 
+  // useEffect(() => {
+  //   // check already connected
+  //   console.log("(BLE): Checking already connected devices...");
+  //   addAlreadyConnectedDevices();
+  // }, [manager]);
+
   useEffect(() => {
-    console.log('useEffect - devices', devices.length);
+    console.log('(APP): useEffect - devices num.:', devices.length);
   }, [devices]);
 
   /**
@@ -227,7 +233,9 @@ export default function App() {
 
   // #region LAYER: ble-plx
   function startScan(onScanError){
-    console.log('Scanning...');
+    console.log('(BLE): Scanning...');
+
+    addAlreadyConnectedDevices();
 
     manager.startDeviceScan([BLE.SERVICE_LED_CONTROL], { allowDuplicates: false }, (error, device) => {
       if (error) {
@@ -273,9 +281,15 @@ export default function App() {
   }
 
   function stopScan() {
-    console.log("Stopping scanning...");
+    console.log("(BLE): Stopping scanning...");
     setScanning(false);
     manager.stopDeviceScan();
+  }
+
+  function addAlreadyConnectedDevices(){
+    manager.connectedDevices([BLE.SERVICE_LED_CONTROL, BLE.SERVICE_MAINTENANCE]).then((alreadyConnected) => {
+      console.log("(TEST): Already connected:", alreadyConnected.map(d => d.name));
+    })
   }
 
   // #endregion

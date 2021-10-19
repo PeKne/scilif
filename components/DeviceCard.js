@@ -73,7 +73,7 @@ export default function DeviceCard({ device, ...props }) {
       setBatteryCharge(batteryCharge);
     }
     catch (error) {
-      console.warn("Error in reading battery charge");
+      console.warn("(Settings-screen): Error in reading battery charge", error.message);
       setBatteryCharge(null);
     }
   };
@@ -84,8 +84,7 @@ export default function DeviceCard({ device, ...props }) {
       setTemperature(temperature);
     }
     catch (error) {
-      console.warn("Error in reading temperature");
-      console.error(error)
+      console.warn("(Settings-screen): Error in reading temperature", error.message);
       setTemperature(null);
     }
   };
@@ -105,7 +104,7 @@ export default function DeviceCard({ device, ...props }) {
         if (pollInterval.current)
           clearInterval(pollInterval.current);
         if (subscription.current) {
-          console.debug("Battery Charge subscription removed");
+          console.debug("(Settings-screen): Battery Charge subscription removed");
           subscription.current.remove();
         }
       };
@@ -115,7 +114,7 @@ export default function DeviceCard({ device, ...props }) {
   return (
     <>
       <Card>
-        <Card.Title style={styles.deviceTitle}>{deviceName} {"  "} <Icon name={"pencil"} size={18} onPress={showDialog} /> </Card.Title>
+        <Card.Title style={styles.deviceTitle}>{deviceName} {"  "} <Icon name={"pencil"} size={18} onPress={showDialog}/> </Card.Title>
         <Card.Divider />
         <View style={styles.layout}>
           <View style={styles.property}>
