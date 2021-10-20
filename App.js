@@ -303,7 +303,7 @@ export default function App() {
       />
       : <ThemeProvider theme={theme}>
         <NavigationContainer>
-          <Stack.Navigator screenOptions={{ headerShown: false, gestureEnabled: false }}>
+          <Stack.Navigator screenOptions={{ headerShown: false}}>
 
             <Stack.Screen name="Intro">{(props) =>
               <IntroScreen {...props}
