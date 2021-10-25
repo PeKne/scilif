@@ -83,6 +83,28 @@ const theme = {
     },
   },
 
+  dialogTitleText: {
+    color: colors.secondary,
+    backgroundColor: colors.primary,
+    fontWeight: "bold"
+  },
+
+  dialogDefaultText: {
+    color: colors.secondary,
+    backgroundColor: colors.primary,
+  },
+
+  dialogDescText: {
+    color: "#808080",
+    backgroundColor: colors.primary,
+  },
+
+  dialogButtons: {
+    color: colors.red,
+    backgroundColor: colors.primary,
+    fontWeight: "bold"
+  },
+
 };
 
 export default theme;

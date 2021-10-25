@@ -4,7 +4,7 @@ import { ListItem, Icon, Text } from 'react-native-elements';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Dialog from "react-native-dialog";
 
-import {colors} from '../styles/theme';
+import theme, {colors} from '../styles/theme';
 
 export default function DeviceItem({
   deviceListItem, navigation, connectDevice, setSelectedDevice, ...props
@@ -78,8 +78,8 @@ export default function DeviceItem({
       </ListItem>
 
       <Dialog.Container visible={connectionErrorDialogVisible} onBackdropPress={closeConnectionErrorDialog}>
-        <Dialog.Title>Device Connection</Dialog.Title>
-        <Dialog.Description>
+        <Dialog.Title style={theme.dialogTitleText}>Device Connection</Dialog.Title>
+        <Dialog.Description style={theme.dialogDescText}>
           Device cannot be connected. Please, try to refresh the list of devices.
         </Dialog.Description>
       </Dialog.Container>

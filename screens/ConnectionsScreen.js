@@ -7,7 +7,7 @@ import Dialog from "react-native-dialog";
 
 import DeviceList from '../components/DeviceList';
 import StatusBar from '../components/StatusBar';
-import { colors } from '../styles/theme';
+import theme, { colors } from '../styles/theme';
 
 export default function ConnectionsScreen({
   navigation, startScanDevices, stopScanDevices, clearDevices, connectDevice, devices, setSelectedDevice, ...props
@@ -55,8 +55,8 @@ export default function ConnectionsScreen({
 
       {/* "ENABLE BLE POPUP" */}
       <Dialog.Container visible={scanErrorDialogVisible} onBackdropPress={closeScanErrorDialog}>
-        <Dialog.Title>Device Scan</Dialog.Title>
-        <Dialog.Description>
+        <Dialog.Title style={theme.dialogTitleText}>Device Scan</Dialog.Title>
+        <Dialog.Description style={theme.dialogDescText}>
           Devices cannot be scanned. Please, turn on BLE.
         </Dialog.Description>
       </Dialog.Container>

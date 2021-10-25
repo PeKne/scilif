@@ -12,7 +12,7 @@ import DeviceCard from '../components/DeviceCard';
 import * as utils from '../services/UtilsService';
 import * as BLE from '../services/BLEService';
 
-import { colors } from '../styles/theme';
+import theme, { colors } from '../styles/theme';
 
 
 const ON_DISCONNECT_DELAY = 3000;
@@ -154,9 +154,9 @@ export default function SettingsScreen({
 
       {/* "ENABLE DISCONNECT POPUP" */}
       <Dialog.Container visible={disconnectDialogVisible} onBackdropPress={closeDisconnectDialog}>
-        <Dialog.Title>DISCONNECTION</Dialog.Title>
-        <Dialog.Description>
-          Device was disconnected.
+        <Dialog.Title style={theme.dialogTitleText}>Device Disconnection</Dialog.Title>
+        <Dialog.Description style={theme.dialogDescText}>
+          Device was successfully disconnected.
         </Dialog.Description>
       </Dialog.Container>
     </>

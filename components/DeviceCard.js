@@ -1,13 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Card, Text, Icon } from 'react-native-elements';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Dialog from "react-native-dialog";
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import BatteryIndicator from './BatteryIndicator';
 
 import * as utils from '../services/UtilsService';
 import * as BLE from '../services/BLEService';
+
+import theme from '../styles/theme';
 
 export default function DeviceCard({ device, ...props }) {
 
@@ -114,7 +117,10 @@ export default function DeviceCard({ device, ...props }) {
   return (
     <>
       <Card>
-        <Card.Title style={styles.deviceTitle}>{deviceName} {"  "} <Icon name={"pencil"} size={18} onPress={showDialog}/> </Card.Title>
+        <View style={{flexDirection: "row", justifyContent: "center"}}>
+          <Card.Title style={styles.deviceTitle}>{deviceName} {"  "} </Card.Title>
+          <Icon name={"pencil"} size={20} onPress={showDialog} />
+        </View>
         <Card.Divider />
         <View style={styles.layout}>
           <View style={styles.property}>
@@ -139,13 +145,13 @@ export default function DeviceCard({ device, ...props }) {
 
       </Card>
       <Dialog.Container onBackdropPress={hideDialog} visible={promptVisible}>
-        <Dialog.Title>Rename device</Dialog.Title>
-        <Dialog.Description>
+        <Dialog.Title style={theme.dialogTitleText}>Rename Device</Dialog.Title>
+        <Dialog.Description style={theme.dialogDescText}>
           Please enter new name of the device
         </Dialog.Description>
-        <Dialog.Input onChangeText={setDialogInput} value={dialogInput} />
-        <Dialog.Button label="Save" onPress={handleDialogSubmit} />
-        <Dialog.Button label="Cancel" onPress={hideDialog} />
+        <Dialog.Input style={theme.dialogDefaultText} onChangeText={setDialogInput} value={dialogInput} />
+        <Dialog.Button style={theme.dialogButtons} label="Save" onPress={handleDialogSubmit} />
+        <Dialog.Button style={theme.dialogButtons} label="Cancel" onPress={hideDialog} />
       </Dialog.Container>
     </>
   );
