@@ -10,5 +10,8 @@
         "buildType": "apk"
       }
     }
+  },
+  "cli": {
+    "version": ">= 0.34.1"
   }
 }

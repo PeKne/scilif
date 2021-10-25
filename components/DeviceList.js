@@ -19,6 +19,7 @@ export default function DeviceList({
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
     clearDevices();
+    startScanDevices();
     wait(REFRESH_INTERVAL).then(() => {
       setRefreshing(false);
     });

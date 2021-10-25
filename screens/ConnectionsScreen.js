@@ -36,8 +36,6 @@ export default function ConnectionsScreen({
     return () => stopScanDevices(); // tear down function
   }, []);
 
-  // console.log(devices);
-
   return (
     <>
       <View style={styles.screen}>

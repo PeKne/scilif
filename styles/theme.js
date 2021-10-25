@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 export const colors = {
   primary: '#ffffff',
   secondary: '#000000',
@@ -84,24 +86,24 @@ const theme = {
   },
 
   dialogTitleText: {
-    color: colors.secondary,
-    backgroundColor: colors.primary,
+    color: Platform.OS === "android" ? colors.secondary : colors.primary,
+    backgroundColor: Platform.OS === "android" ? colors.primary : "transparent",
     fontWeight: "bold"
   },
 
   dialogDefaultText: {
-    color: colors.secondary,
-    backgroundColor: colors.primary,
+    color: Platform.OS === "android" ? colors.secondary : colors.primary,
+    backgroundColor: Platform.OS === "android" ? colors.primary : "transparent",
   },
 
   dialogDescText: {
-    color: "#808080",
-    backgroundColor: colors.primary,
+    color: Platform.OS === "android" ? "#808080" : colors.primary,
+    backgroundColor: Platform.OS === "android" ? colors.primary : "transparent",
   },
 
   dialogButtons: {
-    color: colors.red,
-    backgroundColor: colors.primary,
+    color: Platform.OS === "android" ? colors.red : colors.primary,
+    backgroundColor: Platform.OS === "android" ? colors.primary : "transparent",
     fontWeight: "bold"
   },
 

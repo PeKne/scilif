@@ -1,37 +1,37 @@
 {
-  "expo": {
-    "name": "SunFibre Native",
-    "slug": "scilif",
-    "version": "1.0.3",
-    "orientation": "portrait",
-    "icon": "./resources/images/favicon.png",
-    "splash": {
-      "image": "./resources/images/logo.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#000000"
-    },
-    "updates": {
-      "fallbackToCacheTimeout": 0
-    },
-    "assetBundlePatterns": [
-      "**/*"
-    ],
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.pekne.scilif"
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./resources/images/favicon2.png",
-        "backgroundColor": "#000000"
-      },
-      "package": "com.pekne.scilif"
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      "@config-plugins/react-native-ble-plx"
-    ]
-  }
+    "expo": {
+        "name": "SunFibre Native",
+        "slug": "scilif",
+        "version": "1.0.4",
+        "orientation": "portrait",
+        "icon": "./resources/images/favicon.png",
+        "splash": {
+            "image": "./resources/images/logo.png",
+            "resizeMode": "contain",
+            "backgroundColor": "#000000"
+        },
+        "updates": {
+            "fallbackToCacheTimeout": 0
+        },
+        "assetBundlePatterns": [
+            "**/*"
+        ],
+        "ios": {
+            "supportsTablet": true,
+            "bundleIdentifier": "com.pekne.scilif"
+        },
+        "android": {
+            "adaptiveIcon": {
+                "foregroundImage": "./resources/images/favicon2.png",
+                "backgroundColor": "#000000"
+            },
+            "package": "com.pekne.scilif"
+        },
+        "web": {
+            "favicon": "./assets/favicon.png"
+        },
+        "plugins": [
+            "@config-plugins/react-native-ble-plx"
+        ]
+    }
 }
