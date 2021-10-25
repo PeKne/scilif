@@ -5,7 +5,8 @@
     "ios": "react-native run-ios",
     "web": "expo start --web",
     "eject": "expo eject",
-    "dev": "expo start --dev-client"
+    "dev": "expo start --dev-client",
+    "eas-android": "eas build -p android --profile preview"
   },
   "dependencies": {
     "@config-plugins/react-native-ble-plx": "^0.0.1",

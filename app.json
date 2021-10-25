@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./resources/images/favicon.png",
     "splash": {
-      "image": "./resources/images/logo.jpg",
+      "image": "./resources/images/logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#000000"
     },
@@ -22,7 +22,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./resources/images/favicon2.png",
         "backgroundColor": "#000000"
       },
       "package": "com.pekne.scilif"
