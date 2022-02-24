@@ -1,4 +1,4 @@
-# README
+# SCILIF SUNFIBRE Native App
 Demo aplication demostrating commucation of smartphone (*client*) with [SCILIF SUNFIBRE](https://www.scilif.com/) BLE devices (*servers*).
 
 Based on [React Native](https://reactnative.dev/), with use of [Expo](https://docs.expo.dev/) framework.
