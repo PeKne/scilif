@@ -1,27 +1,6 @@
-
+import * as BLE_C from '../constants/BLEConstants';
 import * as utils from './UtilsService';
 
-
-export const DEVICE_NAMES = ["SunFibre", "BlueIoToy"];
-export const SERVICE_LED_CONTROL = "0000aaaa-1212-efde-1523-785fef13d123";
-export const SERVICE_MAINTENANCE = "0000aaaa-1413-f0df-1624-7960f014d224";
-export const DEVICE_SERVICES = [SERVICE_LED_CONTROL, SERVICE_MAINTENANCE];
-
-// CONNECTIONS
-export const DEVICE_CONNECT_TIMEOUT = 2000; //ms
-
-// LED Control service
-export const CHARACTERISTIC_DEBUG_LED_IDX = 0;
-export const CHARACTERISTIC_DIM_LED_IDX = 1;
-// Maintenance service
-export const CHARACTERISTIC_BATTERY_LEVEL_IDX = 0;
-export const CHARACTERISTIC_BATTERY_CHARGING_IDX = 1;
-export const CHARACTERISTIC_TEMPERATURE_IDX = 2;
-
-
-// POLLING
-export const BATTERY_REFRESH_INTERVAL = 30000;
-export const TEMPERATURE_REFRESH_INTERVAL = 30000;
 
 
 
@@ -30,7 +9,7 @@ export function connect(device) {
   return new Promise(async (resolve, reject) => {
     try {
       // wait until connected
-      let connectedDevice = await device.connect({timeout: DEVICE_CONNECT_TIMEOUT});
+      let connectedDevice = await device.connect({timeout: BLE_C.DEVICE_CONNECT_TIMEOUT});
       console.log(`BLE: Device ${device.name} connected...`);
       resolve(connectedDevice);
     }
@@ -66,7 +45,7 @@ export function getServicesAndCharacteristics(device) {
       await device.discoverAllServicesAndCharacteristics();
       // await device ble services and filter
       let services = await device.services();
-      services = services.filter((s) => DEVICE_SERVICES.includes(s.uuid));
+      services = services.filter((s) => BLE_C.DEVICE_SERVICES.includes(s.uuid));
 
       // map services and characteristics
       // NOTE: important to use for instead of forEach

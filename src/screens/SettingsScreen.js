@@ -11,6 +11,7 @@ import DeviceCard from '../components/DeviceCard';
 
 import * as utils from '../services/UtilsService';
 import * as BLE from '../services/BLEService';
+import * as BLE_C from '../constants/BLEConstants';
 
 import theme, { colors } from '../styles/theme';
 

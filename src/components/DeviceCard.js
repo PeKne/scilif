@@ -9,6 +9,7 @@ import BatteryIndicator from './BatteryIndicator';
 
 import * as utils from '../services/UtilsService';
 import * as BLE from '../services/BLEService';
+import * as BLE_C from '../constants/BLEConstants';
 
 import theme from '../styles/theme';
 
@@ -36,7 +37,7 @@ export default function DeviceCard({ device, ...props }) {
   }, [device])
 
   const pollTemperatureHandler = () => {
-    pollInterval.current = setInterval(() => readTemperatureHandler(), BLE.TEMPERATURE_REFRESH_INTERVAL); // periodically read battery
+    pollInterval.current = setInterval(() => readTemperatureHandler(), BLE_C.TEMPERATURE_REFRESH_INTERVAL); // periodically read battery
   }
 
   const hideDialog = () => {

@@ -4,6 +4,7 @@ import { Text, Icon } from 'react-native-elements';
 import { colors } from '../styles/theme';
 
 import * as BLE from '../services/BLEService';
+import * as BLE_C from '../constants/BLEConstants';
 
 //TODO: move this to DeviceCardr
 export default function BatteryIndicator({ device, ...props }) {
@@ -39,15 +40,13 @@ export default function BatteryIndicator({ device, ...props }) {
     }
   };
 
-  const clearHandler = () => {
-    
-  }
+  const clearHandler = () => {  }
 
   useEffect(() => {
     if (device) {
       // read characterisitcs on start
       readBatteryLevelHandler();
-      const interval = setInterval(() => readBatteryLevelHandler(), BLE.BATTERY_REFRESH_INTERVAL); // periodically read battery
+      const interval = setInterval(() => readBatteryLevelHandler(), BLE_C.BATTERY_REFRESH_INTERVAL); // periodically read battery
 
       return () => { 
         dispatchBattery(null);

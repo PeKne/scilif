@@ -1,5 +1,6 @@
 
 import * as BLE from '../services/BLEService';
+import * as BLE_C from '../constants/BLEConstants';
 import * as utils from '../services/UtilsService';
 
 //TODO: preserve state of device
@@ -57,22 +58,22 @@ export class SunFibreDevice{
 
   getDimLEDCharacteristic(){
     if (!this.servicesCharacteristics) return null;
-    return this.servicesCharacteristics[BLE.SERVICE_LED_CONTROL][BLE.CHARACTERISTIC_DIM_LED_IDX];
+    return this.servicesCharacteristics[BLE_C.SERVICE_LED_CONTROL][BLE_C.CHARACTERISTIC_DIM_LED_IDX];
   }
 
   getBatteryLevelCharacteristic(){
     if (!this.servicesCharacteristics) return null;
-    return this.servicesCharacteristics[BLE.SERVICE_MAINTENANCE][BLE.CHARACTERISTIC_BATTERY_LEVEL_IDX];
+    return this.servicesCharacteristics[BLE_C.SERVICE_MAINTENANCE][BLE_C.CHARACTERISTIC_BATTERY_LEVEL_IDX];
   }
 
   getBatteryChargeCharacteristic(){
     if (!this.servicesCharacteristics) return null;
-    return this.servicesCharacteristics[BLE.SERVICE_MAINTENANCE][BLE.CHARACTERISTIC_BATTERY_CHARGING_IDX];
+    return this.servicesCharacteristics[BLE_C.SERVICE_MAINTENANCE][BLE_C.CHARACTERISTIC_BATTERY_CHARGING_IDX];
   }
 
   getTemperatureCharacteristic(){
     if (!this.servicesCharacteristics) return null;
-    return this.servicesCharacteristics[BLE.SERVICE_MAINTENANCE][BLE.CHARACTERISTIC_TEMPERATURE_IDX];
+    return this.servicesCharacteristics[BLE_C.SERVICE_MAINTENANCE][BLE_C.CHARACTERISTIC_TEMPERATURE_IDX];
   }
 
 

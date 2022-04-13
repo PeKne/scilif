@@ -19,6 +19,8 @@ import { SunFibreDevice } from './models/SunFibreDevice';
 
 import { requestLocationPermission } from './services/PermissionsService';
 import * as BLE from './services/BLEService';
+import * as BLE_C from './constants/BLEConstants';
+
 
   const devicesReducer = (devices, action) => {
     switch (action.type) {
@@ -144,7 +146,7 @@ export default function App() {
       console.log('(SFD): Services and Characteristics obtained.');
 
       // test read
-      await BLE.readCharacteristics(sunFibreDevice.getBLEDevice(), servicesCharacteristics[BLE.SERVICE_LED_CONTROL][BLE.CHARACTERISTIC_DIM_LED_IDX]);
+      await BLE.readCharacteristics(sunFibreDevice.getBLEDevice(), servicesCharacteristics[BLE_C.SERVICE_LED_CONTROL][BLE_C.CHARACTERISTIC_DIM_LED_IDX]);
 
       // dispatch
       dispatchDevices({
@@ -237,7 +239,7 @@ export default function App() {
 
     addAlreadyConnectedDevices();
 
-    manager.startDeviceScan([BLE.SERVICE_LED_CONTROL], { allowDuplicates: false }, (error, device) => {
+    manager.startDeviceScan([BLE_C.SERVICE_LED_CONTROL], { allowDuplicates: false }, (error, device) => {
       if (error) {
         // Handle error (scanning will be stopped automatically)
         if (onScanError) onScanError(error);
@@ -246,7 +248,7 @@ export default function App() {
       }
       if (device === null || !device.name) return;
 
-      if (BLE.DEVICE_NAMES.find(dn => device.name.startsWith(dn))) {
+      if (BLE_C.DEVICE_NAMES.find(dn => device.name.startsWith(dn))) {
         // console.log(`${device.name} scanned!`);
         dispatchDevices({ type: 'SCANNED_DEVICE', payload: device });
       }
@@ -260,7 +262,7 @@ export default function App() {
     return new Promise((resolve, reject) => {
       if (!manager) reject();
 
-      manager.startDeviceScan([BLE.SERVICE_LED_CONTROL], null, (error, device) => {
+      manager.startDeviceScan([BLE_C.SERVICE_LED_CONTROL], null, (error, device) => {
         if (error) {
           // Handle error (scanning will be stopped automatically)
           console.error('ERROR (BLE) scanAndConnect:', error);
@@ -269,7 +271,7 @@ export default function App() {
         if (!device.name) return;
         console.debug('BLE: Device found:', device.name);
 
-        if (device.name.startsWith(BLE.DEVICE_NAME)) {
+        if (device.name.startsWith(BLE_C.DEVICE_NAME)) {
           console.log('BLE: Target device found!!!');
 
           // Stop scanning as it's not necessary if you are scanning for one device.
@@ -287,7 +289,7 @@ export default function App() {
   }
 
   function addAlreadyConnectedDevices(){
-    manager.connectedDevices([BLE.SERVICE_LED_CONTROL, BLE.SERVICE_MAINTENANCE]).then((alreadyConnected) => {
+    manager.connectedDevices([BLE_C.SERVICE_LED_CONTROL, BLE_C.SERVICE_MAINTENANCE]).then((alreadyConnected) => {
       console.log("(TEST): Already connected:", alreadyConnected.map(d => d.name));
     })
   }
@@ -341,7 +343,7 @@ export default function App() {
 
   // Preloads static resources before displaying incomplete APP
   const _fetchResources =async () => {
-    const images = [require('./resources/images/logo.jpg')];
+    const images = [require('../resources/images/logo.jpg')];
     const fonts = [FontAwesome.font];
 
     const fontAssets = fonts.map(font => Font.loadAsync(font));
