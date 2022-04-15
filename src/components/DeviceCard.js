@@ -1,29 +1,27 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, TouchableOpacity, TouchableHighlight } from 'react-native';
 import { Card, Text, Icon } from 'react-native-elements';
 import Dialog from "react-native-dialog";
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import MonitorModal from './MonitorModal';
 import BatteryIndicator from './BatteryIndicator';
-
-import * as utils from '../services/UtilsService';
-import * as BLE from '../services/BLEService';
-import * as BLE_C from '../constants/BLEConstants';
+import RFIDIcon from '../icons/RFIDIcon';
+import MonitorIcon from '../icons/MonitorIcon';
 
 import theme from '../styles/theme';
 
-export default function DeviceCard({ device, ...props }) {
+export default function DeviceCard({ device, batteryLevel, batteryCharge,...props }) {
 
-  const [batteryCharge, setBatteryCharge] = useState(null);
-  const [temperature, setTemperature] = useState(null);
+
+  const [modalRFIDVisible, setModalRFIDVisible] = useState(false);
+  const [modalMonitorVisible, setModalMonitorVisible] = useState(false);
 
   const [promptVisible, setPromptVisible] = useState(false);
   const [deviceName, setDeviceName] = useState(device.device.name);
   const [dialogInput, setDialogInput] = useState(device.device.name);
 
-  const subscription = useRef(null);
-  const pollInterval = useRef(null);
 
   useEffect(() => {
     const fetchDeviceName = async () => {
@@ -36,9 +34,6 @@ export default function DeviceCard({ device, ...props }) {
     fetchDeviceName()
   }, [device])
 
-  const pollTemperatureHandler = () => {
-    pollInterval.current = setInterval(() => readTemperatureHandler(), BLE_C.TEMPERATURE_REFRESH_INTERVAL); // periodically read battery
-  }
 
   const hideDialog = () => {
     setPromptVisible(false)
@@ -63,57 +58,14 @@ export default function DeviceCard({ device, ...props }) {
     return await AsyncStorage.getItem(`@DEVICE__NAME:${device_mac}`)
   }
 
-  const monitorBatteryChargeHandler = () => {
-    subscription.current = BLE.monitorCharacteristic(device.getBatteryChargeCharacteristic(), (value) => {
-      console.log("Battery charge, value has changed.", utils.base64StrToHexStr(value));
-      let batteryCharge = utils.base64StrToUInt8(value);
-      setBatteryCharge(batteryCharge);
-    });
+  const openRFIDModal = () => {
+    setModalRFIDVisible(true);
+    console.log("Modal opened");
   }
 
-  const readBatteryChargeHandler = async () => {
-    try {
-      let batteryCharge = await device.readBatteryChargeCharacteristics();
-      setBatteryCharge(batteryCharge);
-    }
-    catch (error) {
-      console.warn("(Settings-screen): Error in reading battery charge", error.message);
-      setBatteryCharge(null);
-    }
-  };
-
-  const readTemperatureHandler = async () => {
-    try {
-      let temperature = await device.readTempratureCharacteristics();
-      setTemperature(temperature);
-    }
-    catch (error) {
-      console.warn("(Settings-screen): Error in reading temperature", error.message);
-      setTemperature(null);
-    }
-  };
-
-
-  useEffect(() => {
-    if (device) {
-      // read characterisitcs on start
-      readBatteryChargeHandler();
-      readTemperatureHandler();
-      // monitor characteristics 
-      monitorBatteryChargeHandler();
-      // periodically read temperature
-      pollTemperatureHandler();
-
-      return () => { // tear down function
-        if (pollInterval.current)
-          clearInterval(pollInterval.current);
-        if (subscription.current) {
-          console.debug("(Settings-screen): Battery Charge subscription removed");
-          subscription.current.remove();
-        }
-      };
-    }
-  }, [device]);
+  const openMonitorModal = () => {
+    setModalMonitorVisible(true);
+  }
 
   return (
     <>
@@ -123,28 +75,40 @@ export default function DeviceCard({ device, ...props }) {
           <Icon name={"pencil"} size={20} onPress={showDialog} />
         </View>
         <Card.Divider />
-        <View style={styles.layout}>
-          <View style={styles.property}>
-            <Text style={styles.propertyTitle}>Battery Level:</Text>
-            <BatteryIndicator device={device}/>
+        <View style={theme.layout}>
+
+          <View style={theme.layoutProperty}>
+            <Text >Battery Level:</Text>
+            <BatteryIndicator batteryLevel={batteryLevel}/>
           </View>
-          <View style={styles.property}>
-            <Text style={styles.propertyTitle}>MCU Temperature:</Text>
-            <Text style={styles.propertyTitle}> {temperature ?? '?'} °C</Text>
-          </View>
-          <View style={styles.property}>
+
+          <View style={theme.layoutProperty}>
             {
               batteryCharge !== null ?
                 batteryCharge ?
                   <Text style={styles.batteryCharging}> Charging Device{"\n"} </Text>
                   :
                   <Text style={styles.batteryNotCharging}>Device On Battery{"\n"}</Text>
-                : null
+                : 
+                <Text>-</Text> 
             }
+          </View>
+
+          <View style={theme.layoutProperty}>
+            <TouchableOpacity onPress={openRFIDModal}>
+              <RFIDIcon width={35}  height={35} fill={"white"}  />
+            </TouchableOpacity>
+            <TouchableHighlight onPress={openMonitorModal}>
+              <MonitorIcon width={35} height={35} fill={"white"} />
+            </TouchableHighlight>
           </View>
         </View>
 
       </Card>
+      {
+        modalMonitorVisible? <MonitorModal device={device} visible={true} setModalVisible={setModalMonitorVisible}></MonitorModal> : null
+      }
+
       <Dialog.Container onBackdropPress={hideDialog} visible={promptVisible}>
         <Dialog.Title style={theme.dialogTitleText}>Rename Device</Dialog.Title>
         <Dialog.Description style={theme.dialogDescText}>
@@ -160,16 +124,6 @@ export default function DeviceCard({ device, ...props }) {
 
 const styles = StyleSheet.create({
 
-  layout: {
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-  },
-
-  property: {
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    marginBottom: 5
-  },
   propertyTitle: {
     fontSize: 16,
   },

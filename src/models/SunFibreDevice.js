@@ -47,35 +47,27 @@ export class SunFibreDevice{
     this.connected = connected;
   }
 
+  setServicesCharacteristics(servicesCharacteristics){
+    this.servicesCharacteristics = servicesCharacteristics;
+  }
+
+  getService(service){
+    if (!this.servicesCharacteristics)
+      throw new Error("Device does not possesses ser/chars!");
+    return this.servicesCharacteristics[service];
+  }
+
 
   getServicesCharacteristics(){
     return this.servicesCharacteristics;
   }
 
-  setServicesCharacteristics(servicesCharacteristics){
-    this.servicesCharacteristics = servicesCharacteristics;
-  }
+  getServiceCharacteristic(service, characteristicIndex){
+    if (!this.servicesCharacteristics)
+      throw new Error("Device does not possesses ser/chars!");
 
-  getDimLEDCharacteristic(){
-    if (!this.servicesCharacteristics) return null;
-    return this.servicesCharacteristics[BLE_C.SERVICE_LED_CONTROL][BLE_C.CHARACTERISTIC_DIM_LED_IDX];
+    return this.servicesCharacteristics[service][characteristicIndex];
   }
-
-  getBatteryLevelCharacteristic(){
-    if (!this.servicesCharacteristics) return null;
-    return this.servicesCharacteristics[BLE_C.SERVICE_MAINTENANCE][BLE_C.CHARACTERISTIC_BATTERY_LEVEL_IDX];
-  }
-
-  getBatteryChargeCharacteristic(){
-    if (!this.servicesCharacteristics) return null;
-    return this.servicesCharacteristics[BLE_C.SERVICE_MAINTENANCE][BLE_C.CHARACTERISTIC_BATTERY_CHARGING_IDX];
-  }
-
-  getTemperatureCharacteristic(){
-    if (!this.servicesCharacteristics) return null;
-    return this.servicesCharacteristics[BLE_C.SERVICE_MAINTENANCE][BLE_C.CHARACTERISTIC_TEMPERATURE_IDX];
-  }
-
 
 
   // #region BLE functions
@@ -86,8 +78,8 @@ export class SunFibreDevice{
    */
   writeDimLEDCharacteristics(value) {
     console.log("(SFD): Writing Dim LED char.: ", value);
-    const ch = this.getDimLEDCharacteristic();
-    if (!ch) throw new Error("Device does not possesses requested characteristic!");
+    const ch = this.getServiceCharacteristic(BLE_C.SERVICE_LED_CONTROL, BLE_C.CHARACTERISTIC_DIM_LED_IDX);
+    console.log("(SFD): char.: ", ch.uuid, ch.deviceID, ch.serviceUUID);
     return BLE.writeCharacteristics(this.device, ch, value);
   }
 
@@ -98,13 +90,29 @@ export class SunFibreDevice{
    */
   readDimLEDCharacteristics(){
     console.log("(SFD): Reading Dim LED char.");
-    const ch = this.getDimLEDCharacteristic();
-    if (!ch) throw new Error("Device does not possesses requested characteristic!");
-
+    let ch = this.getServiceCharacteristic(BLE_C.SERVICE_LED_CONTROL, BLE_C.CHARACTERISTIC_DIM_LED_IDX);
     return BLE.readCharacteristics(this.device, ch).then(
       value => utils.base64StrToUInt8(value)
     );
   }
+
+  readVLEDCharacteristics(){
+    console.log("(SFD): Reading VLED char.");
+    let ch = this.getServiceCharacteristic(BLE_C.SERVICE_LED_CONTROL, BLE_C.CHARACTERISTIC_VLED_IDX);
+    return BLE.readCharacteristics(this.device, ch).then(
+      value => utils.base64StrToInt16(value)
+    );
+  }
+
+  readISNSCharacteristics(){
+    console.log("(SFD): Reading ISNS char.");
+    let ch = this.getServiceCharacteristic(BLE_C.SERVICE_LED_CONTROL, BLE_C.CHARACTERISTIC_ISNS_IDX);
+    return BLE.readCharacteristics(this.device, ch).then(
+      value => utils.base64StrToInt16(value)
+    );
+  }
+
+
 
   /**
    * Promise to read battery level char. and parse them to integer
@@ -113,9 +121,7 @@ export class SunFibreDevice{
    */
   readBatteryLevelCharacteristics() {
     console.log("(SFD): Reading Battery Level char.");
-    const ch = this.getBatteryLevelCharacteristic();
-    if (!ch) throw new Error("Device does not possesses requested characteristic!");
-
+    let ch = this.getServiceCharacteristic(BLE_C.SERVICE_MAINTENANCE, BLE_C.CHARACTERISTIC_BATTERY_LEVEL_IDX);
     return BLE.readCharacteristics(this.device, ch).then(
       value => utils.base64StrToUInt8(value)
     );
@@ -123,9 +129,7 @@ export class SunFibreDevice{
 
   readBatteryChargeCharacteristics() {
     console.log("(SFD):Reading Battery Charge char.");
-    const ch = this.getBatteryChargeCharacteristic();
-    if (!ch) throw new Error("Device does not possesses requested characteristic!");
-
+    let ch = this.getServiceCharacteristic(BLE_C.SERVICE_MAINTENANCE, BLE_C.CHARACTERISTIC_BATTERY_CHARGING_IDX);
     return BLE.readCharacteristics(this.device, ch).then(
       value => utils.base64StrToUInt8(value)
     );
@@ -133,14 +137,10 @@ export class SunFibreDevice{
 
   readTempratureCharacteristics() {
     console.log("(SFD): Reading temperature char.");
-    const ch = this.getTemperatureCharacteristic();
-    if (!ch) throw new Error("Device does not possesses requested characteristic!");
-
+    let ch = this.getServiceCharacteristic(BLE_C.SERVICE_MAINTENANCE, BLE_C.CHARACTERISTIC_TEMPERATURE_IDX);
     return BLE.readCharacteristics(this.device, ch).then(
       value => utils.base64StrToInt32(value)
     );
   }
   // #endregion
-
-
 }

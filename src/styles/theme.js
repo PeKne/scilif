@@ -15,7 +15,7 @@ export const colors = {
   batteryUnknown: '#909090',
 };
 
-const theme = {
+export const theme = {
   Text: {
     style: {
       color: colors.primary,
@@ -24,6 +24,8 @@ const theme = {
       color: colors.yellow,
       fontSize: 30,
       textAlign: 'center',
+      fontWeight: 'bold',
+      marginBottom: 15,
     },
   },
 
@@ -85,6 +87,11 @@ const theme = {
     },
   },
 
+  textBold: {
+    fontWeight: "bold"
+  },
+
+
   dialogTitleText: {
     color: Platform.OS === "android" ? colors.secondary : colors.primary,
     backgroundColor: Platform.OS === "android" ? colors.primary : "transparent",
@@ -106,6 +113,19 @@ const theme = {
     backgroundColor: Platform.OS === "android" ? colors.primary : "transparent",
     fontWeight: "bold"
   },
+
+  //#region LAYOUT
+  layout: {
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+  },
+
+  layoutProperty: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    marginBottom: 5
+  },
+  //#endregion
 
 };
 

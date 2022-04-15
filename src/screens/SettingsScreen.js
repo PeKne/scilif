@@ -34,63 +34,119 @@ export default function SettingsScreen({
    ...props
 }) {
 
+  const isMounted = useRef(null);
+  const pollInterval = useRef(null);
+
   const dimLEDSubscription = useRef(null);
+  const batteryChargeSubscription = useRef(null);
   const disconnectSubscription = useRef(null);
 
-  const [mode, setMode] = useState(DimLEDModes.UNKNOWN);
-
-  const changeMode = async (newMode) => {
-    try {
-      await device.writeDimLEDCharacteristics(newMode);
-      setMode(newMode)
-    } 
-    catch(error){
-      console.error("(Settings-screen): Unhandled error", error.message);
+  const batteryReducer = (prevState, action) => {
+    switch (action) {
+      case 0x00:
+        return { value: 'Drained', color: colors.battery0, icon: 'battery-empty' };
+      case 0x01:
+        return { value: 'Very Low', color: colors.battery1, icon: 'battery-empty' };
+      case 0x02:
+        return { value: 'Low', color: colors.battery2, icon: 'battery-quarter' };
+      case 0x03:
+        return { value: 'Medium', color: colors.battery4, icon: 'battery-half' };
+      case 0x04:
+        return { value: 'High', color: colors.battery5, icon: 'battery-full' };
+      case 0xFF:
+        return { value: '?', color: colors.batteryUnknown, icon: 'battery-empty' };
+      default:
+        return prevState;
     }
   };
 
 
+  const [lightMode, setLightMode] = useState(DimLEDModes.UNKNOWN);
+
+  const [batteryLevel, dispatchBattery] = useReducer(batteryReducer, null);
+  const [batteryCharge, setBatteryCharge] = useState(null);
+
+
+  const logError = (funcName, error) => console.warn(`(Settings-screen): Error in ${funcName}`, error.message)
+
+  const setState = (setter, state) => isMounted.current? setter(state) : null;
 
   //#region BLE Handlers
-  const readDimLEDHandler = async () => {
-    try {
-      let dimLEDMode = await device.readDimLEDCharacteristics();
-      setMode(dimLEDMode);
-    }
-    catch (error) {
-      console.warn("(Settings-screen): Error in reading Dim LED mode", error.message);
-      setMode(DimLEDModes.UNKNOWN)
-    }
-  };
-
-  const monitorDimLEDHandler = () => {
-    dimLEDSubscription.current = BLE.monitorCharacteristic(device.getDimLEDCharacteristic(), 
-    (value) => {
-      console.log("(Settings-screen): Dim LED, value has changed.", utils.base64StrToHexStr(value));
-      let dimLEDMode = utils.base64StrToUInt8(value);
-      setMode(dimLEDMode);
-    });
-  }
-
   const disconnectHandler = () => {
     disconnectDevice(device);
   };
 
-  const clearHandler = () => {
-    if (dimLEDSubscription.current){
-      console.debug("(Settings-screen): Dim LED subscription removed");
-      dimLEDSubscription.current.remove();
-      dimLEDSubscription.current = null;
-    }
+  const writeDimLEDHandler = (newMode) => {
+    // preserve current mode
+    let currentMode = lightMode;
+    // set new mode immediately
+    setState(setLightMode, newMode);
+    device.writeDimLEDCharacteristics(newMode).then(
+      () => {},
+      (error) => {
+        // restore old mode
+        setState(setLightMode, currentMode);
+        //TODO: output notification
+        logError(writeDimLEDHandler.name, error)
+      }
+    )
+  };
 
-    if (disconnectSubscription.current){
-      console.debug("(Settings-screen): Disconnect subscription removed");
-      disconnectSubscription.current.remove();
-      disconnectSubscription.current = null;
+  const readDimLEDHandler = () => {
+    device.readDimLEDCharacteristics().then(
+      (lightMode) => setState(setLightMode, lightMode),
+      (error) => { logError(readDimLEDHandler.name, error); setState(setLightMode, DimLEDModes.UNKNOWN) }
+    );
+  };
+
+  const monitorDimLEDHandler = () => {
+    try {
+      dimLEDSubscription.current = BLE.monitorCharacteristic(
+        device.getBLEDevice(), BLE_C.SERVICE_LED_CONTROL,
+        device.getServiceCharacteristic(BLE_C.SERVICE_LED_CONTROL, BLE_C.CHARACTERISTIC_DIM_LED_IDX).uuid, 
+      (value) => {
+        console.log("(Settings-screen): Dim LED, value has changed.", utils.base64StrToHexStr(value));
+        let dimLEDMode = utils.base64StrToUInt8(value);
+        setState(setLightMode, dimLEDMode);
+      });
     }
-    setSelectedDevice(null); // tear down function
+    catch(error){ logError(monitorDimLEDHandler.name, error) }
   }
 
+  const readBatteryLevelHandler = () => {
+    device.readBatteryLevelCharacteristics().then(
+      (batteryLevel) => setState(dispatchBattery, batteryLevel),
+      (error) => { logError(readBatteryLevelHandler.name, error); setState(dispatchBattery, -1) }
+    );
+  };
+
+  const readBatteryChargeHandler = () => {
+    device.readBatteryChargeCharacteristics().then(
+      (batteryCharge) => setState(setBatteryCharge, batteryCharge),
+      (error) => { logError(readBatteryChargeHandler.name, error); setState(setBatteryCharge, null) }
+    );
+  };
+
+  const monitorBatteryChargeHandler = () => {
+    try {
+      batteryChargeSubscription.current = BLE.monitorCharacteristic(
+        device.getBLEDevice(), BLE_C.SERVICE_MAINTENANCE,
+        device.getServiceCharacteristic(BLE_C.SERVICE_MAINTENANCE, BLE_C.CHARACTERISTIC_BATTERY_CHARGING_IDX).uuid, 
+      (value) => {
+        console.log("(Settings-screen): Battery charge, value has changed.", utils.base64StrToHexStr(value));
+        let batteryCharge = utils.base64StrToUInt8(value);
+        setState(setBatteryCharge, batteryCharge);
+      });
+    }
+    catch(error){ logError(monitorBatteryChargeHandler.name, error) }
+  }
+
+
+  const pollBatteryLevel = () => {
+    pollInterval.current = setInterval(() => {
+      readBatteryLevelHandler();
+    }, BLE_C.MONITOR_REFRESH_INTERVAL); // periodically read battery
+  }
   //#endregion
 
 
@@ -106,24 +162,64 @@ export default function SettingsScreen({
     navigation.navigate('Connections');
   }
 
+  const onDestroy = () => {
+
+    isMounted.current = false;
+    // clear interval
+    clearInterval(pollInterval.current);
+
+    // cancel all subscriptions
+    if (dimLEDSubscription.current){
+      console.debug("(Settings-screen): Dim LED subscription removed");
+      dimLEDSubscription.current.remove();
+      dimLEDSubscription.current = null;
+    }
+
+    if (batteryChargeSubscription.current){
+      console.debug("(Settings-screen): Battery Charge subscription removed");
+      batteryChargeSubscription.current.remove();
+      batteryChargeSubscription.current = null;
+    }
+
+    if (disconnectSubscription.current){
+      console.debug("(Settings-screen): Disconnect subscription removed");
+      disconnectSubscription.current.remove();
+      disconnectSubscription.current = null;
+    }
+
+    setSelectedDevice(null); // tear down function
+  }
+
+  const onStart = () => {
+
+    isMounted.current = true;
+
+    // read characterisitcs on start
+    readDimLEDHandler();
+    readBatteryLevelHandler();
+    readBatteryChargeHandler();
+
+    // monitor characteristics 
+    monitorDimLEDHandler();
+    monitorBatteryChargeHandler();
+    // periodically read temperature
+    pollBatteryLevel();
+  }
+
 
   // unselect device at the end
   useEffect(() => {
-    if (device){
-      readDimLEDHandler();
-      monitorDimLEDHandler();
-    }
-    return () => {
-      clearHandler();
-    }
+    if (device) onStart();
+    return () => onDestroy();
   }, []);
 
   // unselect device at the end
   useEffect(() => {
+    console.log("Settings screen",  device?.name, device?.servicesCharacteristics?.[BLE_C.SERVICE_LED_CONTROL]?.[BLE_C.CHARACTERISTIC_DIM_LED_IDX])
     if (device){
       disconnectSubscription.current = BLE.monitorDisconnection(device.getBLEDevice(), () => {
         console.log(`(Settings-screen): onDisconnectedSunFibreDevice ${device.getName()}`);
-        clearHandler();
+        onDestroy();
 
         showDisconnectDialog();
         setTimeout(() => closeDisconnectDialog(), ON_DISCONNECT_DELAY);
@@ -139,16 +235,16 @@ export default function SettingsScreen({
 
         <View style={styles.deviceInfoWrapper}>
           {device ? 
-            <DeviceCard device={device}/>  : <ActivityIndicator size="large" />
+            <DeviceCard device={device} batteryCharge={batteryCharge} batteryLevel={batteryLevel}/>  : <ActivityIndicator size="large" />
           }
         </View>
 
         <View style={styles.buttonWrapper}>
-          <OptionButton disabled={!device || mode === DimLEDModes.OFF} title="OFF" onPress={() => changeMode(DimLEDModes.OFF)} />
-          <OptionButton disabled={!device || mode === DimLEDModes.ON_STRONG} title="ON STRONG" onPress={() => changeMode(DimLEDModes.ON_STRONG)} />
-          <OptionButton disabled={!device || mode === DimLEDModes.ON_MILD} title="ON MILD" onPress={() => changeMode(DimLEDModes.ON_MILD)} />
-          <OptionButton disabled={!device || mode === DimLEDModes.FLASH_SLOW} title="FLASH SLOW" onPress={() => changeMode(DimLEDModes.FLASH_SLOW)} />
-          <OptionButton disabled={!device || mode === DimLEDModes.FLASH_FAST} title="FLASH FAST" onPress={() => changeMode(DimLEDModes.FLASH_FAST)} />
+          <OptionButton disabled={!device || lightMode === DimLEDModes.OFF} title="OFF" onPress={() => writeDimLEDHandler(DimLEDModes.OFF)} />
+          <OptionButton disabled={!device || lightMode === DimLEDModes.ON_STRONG} title="ON STRONG" onPress={() => writeDimLEDHandler(DimLEDModes.ON_STRONG)} />
+          <OptionButton disabled={!device || lightMode === DimLEDModes.ON_MILD} title="ON MILD" onPress={() => writeDimLEDHandler(DimLEDModes.ON_MILD)} />
+          <OptionButton disabled={!device || lightMode === DimLEDModes.FLASH_SLOW} title="FLASH SLOW" onPress={() => writeDimLEDHandler(DimLEDModes.FLASH_SLOW)} />
+          <OptionButton disabled={!device || lightMode === DimLEDModes.FLASH_FAST} title="FLASH FAST" onPress={() => writeDimLEDHandler(DimLEDModes.FLASH_FAST)} />
           <Button title="Disconnect" disabled={!device} titleStyle={styles.disconnectButtonTitle} onPress={disconnectHandler} />
         </View>
       </SafeAreaView>

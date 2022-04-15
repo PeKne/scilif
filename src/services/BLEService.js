@@ -65,51 +65,70 @@ export function getServicesAndCharacteristics(device) {
 }
 
 export function writeCharacteristics(device, characteristic, value) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      await characteristic.writeWithResponse(utils.binaryArrayToBase64Str([value]));
-      resolve(characteristic);
-    } catch (error) {
-      // if (error.message.endsWith("was disconnected")){
-      //   console.warn("(BLE): Disconnect in characteristics write...");
-      //   throw new Error(error);
-      // }
-      // else{
-        console.error("ERROR (BLE) writeCharacteristics:", error.message);
-        reject(new Error("Write failed"));
-      // }
-    }
+  return new Promise((resolve, reject) => {
+    characteristic.writeWithResponse(utils.binaryArrayToBase64Str([value])).then(
+      () => resolve(characteristic),
+      (error) => {
+        // if (error.message.endsWith("was disconnected")){
+        //   console.warn("(BLE): Disconnect in characteristics write...");
+        //   throw new Error(error);
+        // }
+        // else{
+          console.error("(BLE) error - writeCharacteristics:", error.message);
+          reject(new Error("Write failed"));
+        // }
+      }
+    );
   });
 }
+
+// export function readCharacteristics(device, characteristic) {
+
+//   return new Promise(async (resolve, reject) => {
+
+//     try {
+//       //NOTE: this must be assigned to a new variable 
+//       let readCharacteristics = await characteristic.read();
+//       console.log('(BLE) readCharacteristics: ', characteristic.uuid, utils.base64StrToHexStr(readCharacteristics.value));
+//       resolve(utils.base64StrToBinaryArray(readCharacteristics.value));
+//     } catch (error) {
+//       console.error('ERROR (BLE) readCharacteristics:', error.message);
+//       reject(new Error("Read failed"));
+//     }
+//   });
+// }
 
 export function readCharacteristics(device, characteristic) {
 
-  return new Promise(async (resolve, reject) => {
-
+  return new Promise((resolve, reject) => {
     try {
       //NOTE: this must be assigned to a new variable 
-      let readCharacteristics = await characteristic.read();
-      console.log('(BLE) readCharacteristics: ', characteristic.uuid, utils.base64StrToHexStr(readCharacteristics.value));
-      resolve(utils.base64StrToBinaryArray(readCharacteristics.value));
+      characteristic.read().then(
+        (readCharacteristics) => {
+          // console.log('(BLE) readCharacteristics: ', characteristic.uuid, utils.base64StrToHexStr(readCharacteristics.value));
+          resolve(utils.base64StrToBinaryArray(readCharacteristics.value));
+        }
+      )
     } catch (error) {
       console.error('ERROR (BLE) readCharacteristics:', error.message);
-      reject(new Error("Read failed"));
+      reject(new Error("(BLE): readCharacteristics failed"));
     }
   });
 }
 
-export function monitorCharacteristic(characteristic, onCharacteristicValueChange, onCharacteristicValueError){
-  return characteristic.monitor((error, characteristic) => {
+export function monitorCharacteristic(device, serviceUUID, characteristicUUID, onCharacteristicValueChangeHandler, onCharacteristicValueErrorHandler){
+
+  return device.monitorCharacteristicForService(serviceUUID, characteristicUUID, (error, characteristic) => {
     if (error === null){
       console.log(`(BLE): Monitor ${characteristic.uuid}, value has changed: ${utils.base64StrToHexStr(characteristic.value)}`);
-      onCharacteristicValueChange(characteristic.value);
+      onCharacteristicValueChangeHandler(characteristic.value);
     }
     else if (error.message === "Operation was cancelled") return;
     else if (error.message.endsWith("was disconnected")) return;
     else {
       console.error("(BLE) Error in monitoring", error.message);
-      if (onCharacteristicValueError) 
-        onCharacteristicValueError(error);
+      if (onCharacteristicValueErrorHandler) 
+        onCharacteristicValueErrorHandler(error);
     }
   })
 }

@@ -26,6 +26,10 @@ export function base64StrToUInt8(value){
   return base64StrToBinaryArray(value).readUInt8();
 }
 
+export function base64StrToInt16(value){
+  return base64StrToBinaryArray(value).readInt16LE();
+}
+
 export function base64StrToInt32(value){
   return base64StrToBinaryArray(value).readInt32LE();
 }
