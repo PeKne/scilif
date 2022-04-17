@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { StyleSheet, View, TouchableOpacity, TouchableHighlight } from 'react-native';
 import { Card, Text, Icon } from 'react-native-elements';
 import Dialog from "react-native-dialog";
@@ -9,32 +9,35 @@ import BatteryIndicator from './BatteryIndicator';
 import MonitorModal from './MonitorModal';
 import RFIDModal from './RFIDModal';
 
+import { DevicesContext } from '../redux/DevicesContext';
+
 import RFIDIcon from '../icons/RFIDIcon';
 import MonitorIcon from '../icons/MonitorIcon';
 
 import theme from '../styles/theme';
 
-export default function DeviceCard({ device, batteryLevel, batteryCharge, batteryVoltage, rfidEnabled, flashModeActive, ...props }) {
+export default function DeviceCard({ batteryLevel, batteryCharge, batteryVoltage, rfidEnabled, flashModeActive, ...props }) {
 
+  const { controlledDevice } = useContext(DevicesContext);
 
   const [modalRFIDVisible, setModalRFIDVisible] = useState(false);
   const [modalMonitorVisible, setModalMonitorVisible] = useState(false);
 
   const [promptVisible, setPromptVisible] = useState(false);
-  const [deviceName, setDeviceName] = useState(device.device.name);
-  const [dialogInput, setDialogInput] = useState(device.device.name);
+  const [deviceName, setDeviceName] = useState(controlledDevice.getName());
+  const [dialogInput, setDialogInput] = useState(controlledDevice.getName());
 
 
   useEffect(() => {
     const fetchDeviceName = async () => {
-      const storedName = await readDeviceName(device.getMAC());
+      const storedName = await readDeviceName(controlledDevice.getMAC());
       if (storedName) {
         setDeviceName(storedName)
         setDialogInput(storedName)
       }
     }
     fetchDeviceName()
-  }, [device])
+  }, [controlledDevice])
 
 
   const hideDialog = () => {
@@ -47,7 +50,7 @@ export default function DeviceCard({ device, batteryLevel, batteryCharge, batter
 
   const handleDialogSubmit = async () => {
     hideDialog();
-    await storeDeviceName(device.getMAC(), dialogInput)
+    await storeDeviceName(controlledDevice.getMAC(), dialogInput)
     const value = await AsyncStorage.getItem('@storage_Key')
     setDeviceName(dialogInput)
   }
@@ -108,17 +111,17 @@ export default function DeviceCard({ device, batteryLevel, batteryCharge, batter
 
       </Card>
       {
-        modalMonitorVisible? <MonitorModal device={device} visible={true} setModalVisible={setModalMonitorVisible} batteryVoltage={batteryVoltage} flashModeActive={flashModeActive}></MonitorModal> : null
+        modalMonitorVisible? <MonitorModal visible={true} setModalVisible={setModalMonitorVisible} batteryVoltage={batteryVoltage} flashModeActive={flashModeActive}></MonitorModal> : null
       }
 
       {
-        modalRFIDVisible? <RFIDModal device={device} visible={true} setModalVisible={setModalRFIDVisible}></RFIDModal> : null
+        modalRFIDVisible? <RFIDModal visible={true} setModalVisible={setModalRFIDVisible}></RFIDModal> : null
       }
 
       <Dialog.Container onBackdropPress={hideDialog} visible={promptVisible}>
         <Dialog.Title style={theme.dialogTitleText}>Rename Device</Dialog.Title>
         <Dialog.Description style={theme.dialogDescText}>
-          Please enter new name of the device
+          Please enter new name of the controlledDevice
         </Dialog.Description>
         <Dialog.Input style={theme.dialogDefaultText} onChangeText={setDialogInput} value={dialogInput} />
         <Dialog.Button style={theme.dialogButtons} label="Save" onPress={handleDialogSubmit} />

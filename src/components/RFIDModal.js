@@ -1,10 +1,12 @@
 
-import React, {useRef, useState, useEffect} from 'react';
+import React, {useRef, useState, useEffect, useContext} from 'react';
 import { StyleSheet, Modal, View, Text, TouchableWithoutFeedback, TouchableOpacity, TextInput, Switch } from 'react-native';
 import { BlurView } from "@react-native-community/blur";
 import moment from 'moment';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import { DevicesContext } from '../redux/DevicesContext';
 
 import * as BLE from '../services/BLEService';
 import * as BLE_C from '../constants/BLEConstants';
@@ -13,7 +15,10 @@ import * as utils from '../services/UtilsService';
 import { theme, colors } from '../styles/theme';
 
 
-export default function RFIDModal({ visible, setModalVisible, device, ...props }) {
+
+export default function RFIDModal({ visible, setModalVisible, ...props }) {
+
+  const { controlledDevice } = useContext(DevicesContext);
 
   const [rfidEnabled, setRfidEnabled] = useState(null);
   const [rfidPairedTagID, setRfidPairedTagID] = useState(null);
@@ -36,7 +41,7 @@ export default function RFIDModal({ visible, setModalVisible, device, ...props }
     let currentRfidEnabled = rfidEnabled;
     // set new mode immediately
     setState(setRfidEnabled, !!newRfidEnabled);
-    device.writeRfidEnabledCharacteristics(newRfidEnabled).then(
+    controlledDevice.writeRfidEnabledCharacteristics(newRfidEnabled).then(
       () => {},
       (error) => {
         // restore old
@@ -53,7 +58,7 @@ export default function RFIDModal({ visible, setModalVisible, device, ...props }
     let currentRfidPairedTagID = rfidPairedTagID;
     // set new mode immediately
     setState(setRfidPairedTagID, newRfidPairedTagID);
-    device.writeRfidPairedTagIDCharacteristics(newRfidPairedTagID).then(
+    controlledDevice.writeRfidPairedTagIDCharacteristics(newRfidPairedTagID).then(
       () => {},
       (error) => {
         // restore old mode
@@ -65,7 +70,7 @@ export default function RFIDModal({ visible, setModalVisible, device, ...props }
   };
 
   const readRfidEnabledHanlder= () => {
-    device.readRfidEnabledCharacteristics().then(
+    controlledDevice.readRfidEnabledCharacteristics().then(
       (rfidEnabled) => { 
         setState(setRfidEnabled, !!rfidEnabled);
       },
@@ -77,7 +82,7 @@ export default function RFIDModal({ visible, setModalVisible, device, ...props }
   };
 
   const readRfidPairedTagIDHandler= () => {
-    device.readRfidPairedTagIDCharacteristics().then(
+    controlledDevice.readRfidPairedTagIDCharacteristics().then(
       (rfidPairedTagID) => {
         setState(setRfidPairedTagID, rfidPairedTagID); 
       },
@@ -88,23 +93,23 @@ export default function RFIDModal({ visible, setModalVisible, device, ...props }
     )
   };
 
-  const readRfidDetectedTagIDHandler= () => {
-    device.readRfidDetectedTagIDCharacteristics().then(
-      (rfidDetectedTagID) => {
-        setState(setRfidDetectedTagID, rfidDetectedTagID); 
-      },
-      (error) => { 
-        setState(setRfidDetectedTagID, null); 
-        logError("RFID Paired Tag ID", error);
-      }
-    )
-  };
+  // const readRfidDetectedTagIDHandler= () => {
+  //   controlledDevice.readRfidDetectedTagIDCharacteristics().then(
+  //     (rfidDetectedTagID) => {
+  //       setState(setRfidDetectedTagID, rfidDetectedTagID); 
+  //     },
+  //     (error) => { 
+  //       setState(setRfidDetectedTagID, null); 
+  //       logError("RFID Paired Tag ID", error);
+  //     }
+  //   )
+  // };
 
   const monitorRfidDetectedTagIDHandler = () => {
     try {
       rfidDetectedTagIDSubscription.current = BLE.monitorCharacteristic(
-        device.getBLEDevice(), BLE_C.SERVICE_RFID,
-        device.getServiceCharacteristic(BLE_C.SERVICE_RFID, BLE_C.CHARACTERISTIC_RFID_DETECTED_TAG_ID_IDX).uuid, 
+        controlledDevice.getBLEDevice(), BLE_C.SERVICE_RFID,
+        controlledDevice.getServiceCharacteristic(BLE_C.SERVICE_RFID, BLE_C.CHARACTERISTIC_RFID_DETECTED_TAG_ID_IDX).uuid, 
       (value) => {
         console.log("(Settings-screen): RFID Detected Tag ID, value has changed.", utils.base64StrToHexStr(value));
         let rfidDetectedTagID = utils.base64StrToUInt32(value);
@@ -112,7 +117,7 @@ export default function RFIDModal({ visible, setModalVisible, device, ...props }
         setState(setRfidDetectedTagID, rfidDetectedTagID);
         setRfidLastDetection(Date.now());
         // save to local storage
-        storeRfidDetectedTagID(device.getMAC(), {tagID: rfidDetectedTagID, timestamp: Date.now()});
+        storeRfidDetectedTagID(controlledDevice.getMAC(), {tagID: rfidDetectedTagID, timestamp: Date.now()});
       });
     }
     catch(error){ logError(monitorRfidDetectedTagIDHandler.name, error) }
@@ -154,7 +159,7 @@ export default function RFIDModal({ visible, setModalVisible, device, ...props }
     monitorRfidDetectedTagIDHandler();
     pollRfidEnabledAndPairedTagIDHanlder();
 
-    readRfidDetectedTagID(device.getMAC()).then(
+    readRfidDetectedTagID(controlledDevice.getMAC()).then(
       (rfidDetectedTagID) => {
         setRfidDetectedTagID(rfidDetectedTagID.tagID);
         setRfidLastDetection(rfidDetectedTagID.timestamp);
@@ -175,7 +180,7 @@ export default function RFIDModal({ visible, setModalVisible, device, ...props }
   }
 
   useEffect(() => {
-    if (device) onStart();
+    if (controlledDevice) onStart();
     return () => onDestroy();
   }, []);
 
@@ -224,7 +229,7 @@ export default function RFIDModal({ visible, setModalVisible, device, ...props }
 
                 <View style={styles.layoutProperty}>
                   <Text style={styles.property}>Last Detection:</Text>
-                  <Text style={[styles.property, theme.textBold]}>{(rfidLastDetection ? moment(rfidLastDetection).format('DD.MM HH:MM') : '')}</Text>
+                  <Text style={[styles.property, theme.textBold]}>{(rfidLastDetection ? moment(rfidLastDetection).format('DD.MM HH:mm') : '')}</Text>
                 </View>
 
                 {/* <View style={styles.layoutProperty}>

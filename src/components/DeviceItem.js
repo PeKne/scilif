@@ -1,14 +1,17 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useContext, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { ListItem, Icon, Text } from 'react-native-elements';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Dialog from "react-native-dialog";
 
+
+import { DevicesContext } from '../redux/DevicesContext';
+
 import theme, {colors} from '../styles/theme';
 
-export default function DeviceItem({
-  deviceListItem, navigation, connectDevice, setSelectedDevice, ...props
-}) {
+export default function DeviceItem({deviceListItem, navigation, ...props}) {
+
+  const { setSunFibreDeviceToControl, connectSunFibreDevice } = useContext(DevicesContext);
 
   const [deviceSelected, setDeviceSelected] = useState(false);
   const [connectionErrorDialogVisible, setConnectionErrorDialogVisible] = useState(false);
@@ -29,13 +32,12 @@ export default function DeviceItem({
     console.log("(Connections-screen): Setting selected device...", sfd.getName(), sfd.getMAC());
 
     // select device at first
-    setSelectedDevice(sfd);
-
+    setSunFibreDeviceToControl(sfd);
 
     // connect to device if it is not connected
     if (!sfd.isConnected()){
       try {
-        await connectDevice(sfd);
+        await connectSunFibreDevice(sfd);
       }
       catch(error){
         console.error("(Connections-screen): Device cannot be connected", error);

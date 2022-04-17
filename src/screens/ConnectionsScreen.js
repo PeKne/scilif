@@ -1,19 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import {
-  StyleSheet, View,
-} from 'react-native';
+import React, { useEffect, useState, useContext } from 'react';
+import { StyleSheet, View } from 'react-native';
+
 import { Text } from 'react-native-elements';
 import Dialog from "react-native-dialog";
 
 import DeviceList from '../components/DeviceList';
 import StatusBar from '../components/StatusBar';
+
+import { DevicesContext } from '../redux/DevicesContext';
+
 import theme, { colors } from '../styles/theme';
 
-export default function ConnectionsScreen({
-  navigation, startScanDevices, stopScanDevices, clearDevices, connectDevice, devices, setSelectedDevice, ...props
-}) {
+
+export default function ConnectionsScreen({navigation, ...props}) {
+
+  const { devices, startScanningSunFibreDevices, stopScanningSunFibreDevices } = useContext(DevicesContext);
 
   const [scanErrorDialogVisible, setScanErrorDialogVisible] = useState(false);
+  // const [scanning, setScanning] = useState(false);
 
   const showScanErrorDialog = () => setScanErrorDialogVisible(true);
 
@@ -32,8 +36,9 @@ export default function ConnectionsScreen({
   }
 
   useEffect(() => {
-      startScanDevices(onScanErrorHandler);
-    return () => stopScanDevices(); // tear down function
+    startScanningSunFibreDevices(onScanErrorHandler);
+      // setScanning(true);
+    return () => stopScanningSunFibreDevices(); 
   }, []);
 
   return (
@@ -42,13 +47,7 @@ export default function ConnectionsScreen({
         <Text>{devices.length}</Text>
         <StatusBar navigation={navigation} />
         <Text h1 style={styles.text}>Select Device:</Text>
-        <DeviceList navigation={navigation} devices={devices}
-          startScanDevices={startScanDevices}
-          stopScanDevices={stopScanDevices}
-          clearDevices={clearDevices}
-          connectDevice={connectDevice}
-          setSelectedDevice={setSelectedDevice}
-        />
+        <DeviceList navigation={navigation}/>
       </View>
 
       {/* "ENABLE BLE POPUP" */}

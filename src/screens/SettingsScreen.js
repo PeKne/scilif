@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useReducer, useRef } from 'react';
+import React, { useState, useEffect, useReducer, useRef, useContext } from 'react';
 import {
   StyleSheet, View, ActivityIndicator, SafeAreaView,
 } from 'react-native';
@@ -8,6 +8,8 @@ import Dialog from "react-native-dialog";
 
 import StatusBar from '../components/StatusBar';
 import DeviceCard from '../components/DeviceCard';
+
+import { DevicesContext } from '../redux/DevicesContext';
 
 import * as utils from '../services/UtilsService';
 import * as BLE from '../services/BLEService';
@@ -27,11 +29,9 @@ const DimLEDModes = {
   UNKNOWN:    0x5,
 }
 
-export default function SettingsScreen({
-  navigation,
-  device, setSelectedDevice,
-  ...props
-}) {
+export default function SettingsScreen({navigation, ...props }) {
+
+  const { controlledDevice, disconnectSunFibreDevice, setSunFibreDeviceToControl } = useContext(DevicesContext);
 
   const isMounted = useRef(null);
   const pollInterval = useRef(null);
@@ -79,12 +79,12 @@ export default function SettingsScreen({
 
   //#region BLE Handlers
   const disconnectHandler = () => {
-    BLE.disconnect(device.getBLEDevice());
+    disconnectSunFibreDevice(controlledDevice);
   };
 
   const monitorDisconnection = () => {
-    disconnectSubscription.current = BLE.monitorDisconnection(device.getBLEDevice(), () => {
-      console.log(`(Settings-screen): onDisconnectedSunFibreDevice ${device.getName()}`);
+    disconnectSubscription.current = BLE.monitorDisconnection(controlledDevice.getBLEDevice(), () => {
+      console.log(`(Settings-screen): onDisconnectedSunFibreDevice ${controlledDevice.getName()}`);
       onDestroy();
 
       showDisconnectDialog();
@@ -97,7 +97,7 @@ export default function SettingsScreen({
     let currentMode = lightMode;
     // set new mode immediately
     setState(setLightMode, newMode);
-    device.writeDimLEDCharacteristics(newMode).then(
+    controlledDevice.writeDimLEDCharacteristics(newMode).then(
       () => {},
       (error) => {
         // restore old mode
@@ -109,7 +109,7 @@ export default function SettingsScreen({
   };
 
   const readDimLEDHandler = () => {
-    device.readDimLEDCharacteristics().then(
+    controlledDevice.readDimLEDCharacteristics().then(
       (lightMode) => setState(setLightMode, lightMode),
       (error) => { logError(readDimLEDHandler.name, error); setState(setLightMode, DimLEDModes.UNKNOWN) }
     );
@@ -118,8 +118,8 @@ export default function SettingsScreen({
   const monitorDimLEDHandler = () => {
     try {
       dimLEDSubscription.current = BLE.monitorCharacteristic(
-        device.getBLEDevice(), BLE_C.SERVICE_LED_CONTROL,
-        device.getServiceCharacteristic(BLE_C.SERVICE_LED_CONTROL, BLE_C.CHARACTERISTIC_DIM_LED_IDX).uuid, 
+        controlledDevice.getBLEDevice(), BLE_C.SERVICE_LED_CONTROL,
+        controlledDevice.getServiceCharacteristic(BLE_C.SERVICE_LED_CONTROL, BLE_C.CHARACTERISTIC_DIM_LED_IDX).uuid, 
       (value) => {
         console.log("(Settings-screen): Dim LED, value has changed.", utils.base64StrToHexStr(value));
         let dimLEDMode = utils.base64StrToUInt8(value);
@@ -130,14 +130,14 @@ export default function SettingsScreen({
   }
 
   const readBatteryLevelHandler = () => {
-    device.readBatteryLevelCharacteristics().then(
+    controlledDevice.readBatteryLevelCharacteristics().then(
       ([batteryLevel, batteryVoltage]) => { setState(dispatchBattery, batteryLevel); setState(setBatteryVoltage, batteryVoltage) },
       (error) => { logError(readBatteryLevelHandler.name, error); setState(dispatchBattery, -1) }
     );
   };
 
   const readBatteryChargeHandler = () => {
-    device.readBatteryChargeCharacteristics().then(
+    controlledDevice.readBatteryChargeCharacteristics().then(
       (batteryCharge) => setState(setBatteryCharge, batteryCharge),
       (error) => { logError(readBatteryChargeHandler.name, error); setState(setBatteryCharge, null) }
     );
@@ -146,8 +146,8 @@ export default function SettingsScreen({
   const monitorBatteryChargeHandler = () => {
     try {
       batteryChargeSubscription.current = BLE.monitorCharacteristic(
-        device.getBLEDevice(), BLE_C.SERVICE_MONITOR,
-        device.getServiceCharacteristic(BLE_C.SERVICE_MONITOR, BLE_C.CHARACTERISTIC_BATTERY_CHARGING_IDX).uuid, 
+        controlledDevice.getBLEDevice(), BLE_C.SERVICE_MONITOR,
+        controlledDevice.getServiceCharacteristic(BLE_C.SERVICE_MONITOR, BLE_C.CHARACTERISTIC_BATTERY_CHARGING_IDX).uuid, 
       (value) => {
         console.log("(Settings-screen): Battery charge, value has changed.", utils.base64StrToHexStr(value));
         let batteryCharge = utils.base64StrToUInt8(value);
@@ -166,7 +166,7 @@ export default function SettingsScreen({
   //#endregion
 
 
-  const OptionButton = (props) => <Button type="outline" disabledStyle={device ? styles.activatedButton : null} disabledTitleStyle={device ? styles.activeButtonTitle : null} {...props} />;
+  const OptionButton = (props) => <Button type="outline" disabledStyle={controlledDevice ? styles.activatedButton : null} disabledTitleStyle={controlledDevice ? styles.activeButtonTitle : null} {...props} />;
 
 
   const [disconnectDialogVisible, setDisconnectDialogVisible] = useState(false);
@@ -203,7 +203,7 @@ export default function SettingsScreen({
       disconnectSubscription.current = null;
     }
 
-    setSelectedDevice(null); // tear down function
+    setSunFibreDeviceToControl(null); // tear down function
   }
 
   const onStart = () => {
@@ -223,23 +223,23 @@ export default function SettingsScreen({
   }
 
 
-  // unselect device at the end
+  // unselect controlledDevice at the end
   useEffect(() => {
-    if (device) onStart();
+    if (controlledDevice) onStart();
     return () => onDestroy();
   }, []);
 
-  // unselect device at the end
+  // unselect controlledDevice at the end
   useEffect(() => {
-    // console.log("Settings screen",  device?.name, device?.servicesCharacteristics?.[BLE_C.SERVICE_LED_CONTROL]?.[BLE_C.CHARACTERISTIC_DIM_LED_IDX])
-    if (device){
+    // console.log("Settings screen",  controlledDevice?.name, controlledDevice?.servicesCharacteristics?.[BLE_C.SERVICE_LED_CONTROL]?.[BLE_C.CHARACTERISTIC_DIM_LED_IDX])
+    if (controlledDevice){
       // monitor disconnection
       monitorDisconnection();
 
       // check RFID presence
-      setRfidEnabled(device.getService(BLE_C.SERVICE_RFID) !== undefined);
+      setRfidEnabled(controlledDevice.getService(BLE_C.SERVICE_RFID) !== undefined);
     }
-  }, [device]);
+  }, [controlledDevice]);
 
   useEffect(() => {
     setFlashModeActive(lightMode === DimLEDModes.FLASH_FAST || lightMode === DimLEDModes.FLASH_SLOW);
@@ -252,19 +252,19 @@ export default function SettingsScreen({
         <Text h1>Device Control</Text>
 
         <View style={styles.deviceInfoWrapper}>
-          {device ? 
-            <DeviceCard device={device} batteryCharge={batteryCharge} batteryLevel={batteryLevel} batteryVoltage={batteryVoltage} rfidEnabled={rfidEnabled} flashModeActive={flashModeActive}/>:
+          {controlledDevice ? 
+            <DeviceCard batteryCharge={batteryCharge} batteryLevel={batteryLevel} batteryVoltage={batteryVoltage} rfidEnabled={rfidEnabled} flashModeActive={flashModeActive}/>:
             <ActivityIndicator size="large" />
           }
         </View>
 
         <View style={styles.buttonWrapper}>
-          <OptionButton disabled={!device || lightMode === DimLEDModes.OFF} title="OFF" onPress={() => writeDimLEDHandler(DimLEDModes.OFF)} />
-          <OptionButton disabled={!device || lightMode === DimLEDModes.ON_STRONG} title="ON STRONG" onPress={() => writeDimLEDHandler(DimLEDModes.ON_STRONG)} />
-          <OptionButton disabled={!device || lightMode === DimLEDModes.ON_MILD} title="ON MILD" onPress={() => writeDimLEDHandler(DimLEDModes.ON_MILD)} />
-          <OptionButton disabled={!device || lightMode === DimLEDModes.FLASH_SLOW} title="FLASH SLOW" onPress={() => writeDimLEDHandler(DimLEDModes.FLASH_SLOW)} />
-          <OptionButton disabled={!device || lightMode === DimLEDModes.FLASH_FAST} title="FLASH FAST" onPress={() => writeDimLEDHandler(DimLEDModes.FLASH_FAST)} />
-          <Button title="Disconnect" disabled={!device} titleStyle={styles.disconnectButtonTitle} onPress={disconnectHandler} />
+          <OptionButton disabled={!controlledDevice || lightMode === DimLEDModes.OFF} title="OFF" onPress={() => writeDimLEDHandler(DimLEDModes.OFF)} />
+          <OptionButton disabled={!controlledDevice || lightMode === DimLEDModes.ON_STRONG} title="ON STRONG" onPress={() => writeDimLEDHandler(DimLEDModes.ON_STRONG)} />
+          <OptionButton disabled={!controlledDevice || lightMode === DimLEDModes.ON_MILD} title="ON MILD" onPress={() => writeDimLEDHandler(DimLEDModes.ON_MILD)} />
+          <OptionButton disabled={!controlledDevice || lightMode === DimLEDModes.FLASH_SLOW} title="FLASH SLOW" onPress={() => writeDimLEDHandler(DimLEDModes.FLASH_SLOW)} />
+          <OptionButton disabled={!controlledDevice || lightMode === DimLEDModes.FLASH_FAST} title="FLASH FAST" onPress={() => writeDimLEDHandler(DimLEDModes.FLASH_FAST)} />
+          <Button title="Disconnect" disabled={!controlledDevice} titleStyle={styles.disconnectButtonTitle} onPress={disconnectHandler} />
         </View>
       </SafeAreaView>
 

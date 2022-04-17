@@ -1,14 +1,19 @@
 
-import React, {useRef, useState, useEffect} from 'react';
-import { StyleSheet, Modal, View, Text, Pressable, TouchableWithoutFeedback, TouchableOpacity } from 'react-native';
+import React, {useRef, useState, useEffect, useContext} from 'react';
+import { StyleSheet, Modal, View, Text, TouchableWithoutFeedback, TouchableOpacity } from 'react-native';
 import { BlurView } from "@react-native-community/blur";
+
+import { DevicesContext } from '../redux/DevicesContext';
 
 import * as BLE_C from '../constants/BLEConstants';
 
 import { theme, colors } from '../styles/theme';
 
 
-export default function MonitorModal({ visible, setModalVisible, device, batteryVoltage, flashModeActive, ...props }) {
+
+export default function MonitorModal({ visible, setModalVisible, batteryVoltage, flashModeActive, ...props }) {
+
+  const { controlledDevice } = useContext(DevicesContext);
 
   const isMounted = useRef(null);
   const polled = useRef(null);
@@ -25,7 +30,7 @@ export default function MonitorModal({ visible, setModalVisible, device, battery
   const setState = (setter, state) => isMounted.current? setter(state) : null;
 
   const readFWHWVersionHandler = () => {
-    device.readFWHWVersionCharacteristics().then(
+    controlledDevice.readFWHWVersionCharacteristics().then(
       (version) => setState(setFwHw, version),
       (error) => { 
         setState(setFwHw, null);
@@ -35,7 +40,7 @@ export default function MonitorModal({ visible, setModalVisible, device, battery
   }
 
   const readTemperatureHandler = () => {
-    device.readTempratureCharacteristics().then(
+    controlledDevice.readTempratureCharacteristics().then(
       (temperature) => setState(setTemperature, temperature),
       (error) => { 
         setState(setTemperature, null)
@@ -46,7 +51,7 @@ export default function MonitorModal({ visible, setModalVisible, device, battery
   };
 
   const readVLEDHanlder = () => {
-    device.readVLEDCharacteristics().then(
+    controlledDevice.readVLEDCharacteristics().then(
       (vled) => setState(setVLED, vled),
       (error) => { 
         setState(setVLED, null);
@@ -56,7 +61,7 @@ export default function MonitorModal({ visible, setModalVisible, device, battery
   };
 
   const readISNSHandler = () => {
-    device.readISNSCharacteristics().then(
+    controlledDevice.readISNSCharacteristics().then(
       (isns) => setState(setISNS, isns),
       (error) => {
         setState(setISNS, null);
@@ -91,7 +96,7 @@ export default function MonitorModal({ visible, setModalVisible, device, battery
   }
 
   useEffect(() => {
-    if (device) onStart();
+    if (controlledDevice) onStart();
     return () => onDestroy();
   }, []);
 

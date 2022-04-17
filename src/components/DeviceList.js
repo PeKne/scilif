@@ -1,18 +1,21 @@
-import React from 'react';
-import {
-  RefreshControl, ActivityIndicator, FlatList, SafeAreaView, View, StyleSheet,
-} from 'react-native';
+import React, { useContext } from 'react';
+import { RefreshControl, ActivityIndicator, FlatList, SafeAreaView, View, StyleSheet } from 'react-native';
 import { Divider } from 'react-native-elements';
-import { colors } from '../styles/theme';
+
 import DeviceItem from './DeviceItem';
+
+import { DevicesContext } from '../redux/DevicesContext';
+
+import { colors } from '../styles/theme';
 
 const wait = (timeout) => new Promise((resolve) => setTimeout(resolve, timeout));
 
 const REFRESH_INTERVAL = 1000;
 
-export default function DeviceList({
-  navigation, devices, startScanDevices, stopScanDevices, clearDevices, connectDevice, setSelectedDevice, ...props
-}) {
+export default function DeviceList({navigation, ...props}) {
+
+  const { devices, clearSunFibreDevices } = useContext(DevicesContext);
+
   const [refreshing, setRefreshing] = React.useState(false);
 
   //TODO: more UI stuff - might be redundant
@@ -38,8 +41,6 @@ export default function DeviceList({
           <DeviceItem 
             navigation={navigation}
             deviceListItem={deviceListItem}
-            connectDevice={connectDevice}
-            setSelectedDevice={setSelectedDevice}
           />}
         keyExtractor={(item) => item.device.id}
         ListEmptyComponent={EmptyList}
