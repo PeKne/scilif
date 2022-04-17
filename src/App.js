@@ -15,72 +15,14 @@ import SettingsScreen from './screens/SettingsScreen';
 
 import theme from './styles/theme';
 
-import { SunFibreDevice } from './models/SunFibreDevice';
-
 import { requestLocationPermission } from './services/PermissionsService';
+
+import { devicesReducer } from './redux/devicesReducer'
+
 import * as BLE from './services/BLEService';
 import * as BLE_C from './constants/BLEConstants';
 
 
-  const devicesReducer = (devices, action) => {
-    switch (action.type) {
-      /**
-       * Either add new device to device list or if existing update its timestamp
-       * @param {*} device
-       */
-      case 'SCANNED_DEVICE': {
-        const device = action.payload;
-        const existingDevice = devices.find((sfd) => sfd.getMAC() == device.id);
-
-        // if (!existingDevice && device.isConnectable) {
-        if (!existingDevice) {
-          console.log('BLE: addDevice', device.id, device.name);
-          return [...devices, new SunFibreDevice(device, null)];
-        }
-
-        if (existingDevice) {
-          // refresh timestamp
-          existingDevice.setLastSeenTimestamp(Date.now());
-          return devices;
-        }
-      }
-
-      case 'CONNECTED_DEVICE': {
-        const device = action.payload.device;
-        const existingDevice = devices.find((sfd) => sfd.getMAC() == device.id);
-
-        if (!existingDevice) throw new Error('Device is not in devices list!');
-
-        existingDevice.setConnected(true);
-        existingDevice.setServicesCharacteristics(action.payload.servicesCharacteristics);
-        return devices;
-      }
-
-      case 'DISCONNECTED_DEVICE': {
-        const device = action.payload;
-        const existingDevice = devices.find((sfd) => sfd.getMAC() == device.id);
-
-        if (!existingDevice) 
-          return devices;
-        // throw new Error('Device is not in devices list!');
-
-        //NOTE: this might be redundant - object will be deleted anyway
-        existingDevice.setConnected(false);
-        existingDevice.setServicesCharacteristics(null);
-
-        // filter devices
-        return devices.filter(d => d.getMAC() !== device.id);
-      }
-
-      case 'SET':
-        return action.payload;
-      case 'CLEAR':
-        console.log("Clearing devices...");
-        return devices.filter((dev) => dev.isConnected());
-      default:
-        throw new Error('Unsupported devicesReducer action received.');
-    }
-  };
 
 export default function App() {
 
@@ -97,10 +39,11 @@ export default function App() {
   // permissions granted
   const [permissionsGranted, setPermissionsGranted] = useState(false);
 
-
-
   // all SunFibre devices that were found
-  const [devices, dispatchDevices] = useReducer(devicesReducer, []);
+ const [devices, dispatchDevices] = useReducer(devicesReducer, []);
+
+
+
 
   // TODO: diconnect x connect should be probably wrapped by a promise too
 
@@ -129,72 +72,65 @@ export default function App() {
   //   addAlreadyConnectedDevices();
   // }, [manager]);
 
-  useEffect(() => {
-    console.log('(APP): useEffect - devices num.:', devices.length);
-  }, [devices]);
+  // useEffect(() => {
+  //   console.log('(APP): useEffect - devices num.:', devices.length);
+  // }, [devices]);
+
 
   /**
    * Establishes connection with BLE SunFibre device.
    *
    * @param {SunFibreDevice} sunFibreDevice
    */
-  const connectToSunFibreDevice = async (sunFibreDevice) => {
+  const connectToSunFibreDevice = (sunFibreDevice) => {
 
-    try{
-      await BLE.connect(sunFibreDevice.getBLEDevice());
-      let servicesCharacteristics = await BLE.getServicesAndCharacteristics(sunFibreDevice.getBLEDevice());
-      console.log('(SFD): Services and Characteristics obtained.');
+    // try{
+    //   await BLE.connect(sunFibreDevice.getBLEDevice());
+    //   let servicesCharacteristics = await BLE.getServicesAndCharacteristics(sunFibreDevice.getBLEDevice());
+    //   console.log('(SFD): Services and Characteristics obtained.');
 
-      // test read
-      await BLE.readCharacteristics(sunFibreDevice.getBLEDevice(), servicesCharacteristics[BLE_C.SERVICE_LED_CONTROL][BLE_C.CHARACTERISTIC_DIM_LED_IDX]);
+    //   // test read
+    //   await BLE.readCharacteristics(sunFibreDevice.getBLEDevice(), servicesCharacteristics[BLE_C.SERVICE_LED_CONTROL][BLE_C.CHARACTERISTIC_DIM_LED_IDX]);
 
-      // dispatch
-      dispatchDevices({
-        type: 'CONNECTED_DEVICE',
-        payload: {
-          device: sunFibreDevice.getBLEDevice(),
-          servicesCharacteristics: servicesCharacteristics,
-        },
-      });
-      console.log(`(SFD): Device ${sunFibreDevice.getName()} connected`);
+    //   // dispatch
+    //   dispatchDevices({
+    //     type: 'CONNECTED_DEVICE',
+    //     payload: {
+    //       device: sunFibreDevice.getBLEDevice(),
+    //       servicesCharacteristics: servicesCharacteristics,
+    //     },
+    //   });
+    //   console.log(`(SFD): Device ${sunFibreDevice.getName()} connected`);
 
-      onDisconnectedSunFibreDevice(sunFibreDevice);
-    }
-    catch(error){
-      if (error.message === "Read failed"){
-        console.warn("BONDING - MISS KEY");
-      }
-      else {
-        console.error("ERROR (connectSFD): ", error.message);
-      }
-      throw error;
-    }
-    // var sch;
-    // return BLE.connect(sunFibreDevice.getBLEDevice())
-    //   .then((device) => BLE.getServicesAndCharacteristics(device))
-    //   .then((deviceServicesAndCharacteristics) => {
-    //     console.log('(SD): Services and Characteristics obtained.');
-    //     sch = deviceServicesAndCharacteristics;
-    //     // let temp = new SunFibreDevice(sunFibreDevice.getBLEDevice(), sch);
-    //     // return temp.readBatteryChargeCharacteristics();
-    //   })
-    //   .then (() => {
-    //     dispatchDevices({
-    //       type: 'CONNECTED_DEVICE',
-    //       payload: {
-    //         device: sunFibreDevice.getBLEDevice(),
-    //         // servicesCharacteristics: deviceServicesAndCharacteristics,
-    //         servicesCharacteristics: sch,
-    //       },
-    //     });
-    //     // monitorDisconnection(sunFibreDevice.getBLEDevice());
-    //     console.log(`(SFD): Device ${sunFibreDevice.getName()} connected`);
+    //   onDisconnectedSunFibreDevice(sunFibreDevice);
+    // }
+    // catch(error){
+    //   if (error.message === "Read failed"){
+    //     console.warn("BONDING - MISS KEY");
+    //   }
+    //   else {
+    //     console.error("ERROR (connectSFD): ", error.message);
+    //   }
+    //   throw error;
+    // }
 
-    //     onDisconnectedSunFibreDevice(sunFibreDevice);
+    return BLE.connect(sunFibreDevice.getBLEDevice())
+      .then((device) => BLE.getServicesAndCharacteristics(device))
+      .then((sch) => {
+        console.log('(SFD): Services and Characteristics obtained.');
 
-    //   })
-    //   .catch((error) => { throw new Error(error) });
+        dispatchDevices({
+          type: 'CONNECTED_DEVICE',
+          payload: { device: sunFibreDevice.getBLEDevice(), servicesCharacteristics: sch },
+        });
+        // monitorDisconnection(sunFibreDevice.getBLEDevice());
+        console.log(`(SFD): Device ${sunFibreDevice.getName()} connected`);
+
+        onDisconnectedSunFibreDevice(sunFibreDevice);
+      })
+      .catch((error) => { throw new Error(error) });
   }
+
 
   /**
    * Close the connection with BLE SunFibre device.
@@ -212,11 +148,7 @@ export default function App() {
       .then(_ => {
         console.log(`(SFD): Device ${sunFibreDevice.getName()} disconnected`);
       })
-      .catch(error => {
-        //TODO: popup
-        console.warn(error);
-      })
-      ;
+      .catch(error => console.warn(error));
   };
 
 
@@ -224,11 +156,12 @@ export default function App() {
     const subscription = BLE.monitorDisconnection(sunFibreDevice.getBLEDevice(), () => {
       console.log(`(SFD): onDisconnectedSunFibreDevice ${sunFibreDevice.getName()}`);
 
-      subscription.remove();
       dispatchDevices({
         type: 'DISCONNECTED_DEVICE',
         payload: sunFibreDevice.getBLEDevice(),
       });
+
+      subscription.remove();
     });
   }
 
@@ -289,7 +222,7 @@ export default function App() {
   }
 
   function addAlreadyConnectedDevices(){
-    manager.connectedDevices([BLE_C.SERVICE_LED_CONTROL, BLE_C.SERVICE_MAINTENANCE]).then((alreadyConnected) => {
+    manager.connectedDevices([BLE_C.SERVICE_LED_CONTROL, BLE_C.SERVICE_MONITOR]).then((alreadyConnected) => {
       console.log("(TEST): Already connected:", alreadyConnected.map(d => d.name));
     })
   }
@@ -341,7 +274,7 @@ export default function App() {
 }
 
   // Preloads static resources before displaying incomplete APP
-  const _fetchResources =async () => {
+  const _fetchResources = async () => {
     const images = [require('../resources/images/logo.jpg')];
     const fonts = [FontAwesome.font];
 

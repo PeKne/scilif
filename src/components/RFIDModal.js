@@ -1,12 +1,14 @@
 
 import React, {useRef, useState, useEffect} from 'react';
-import { StyleSheet, Modal, View, Text, TouchableWithoutFeedback, TouchableOpacity, TextInput, Switch, MaskedViewComponent } from 'react-native';
+import { StyleSheet, Modal, View, Text, TouchableWithoutFeedback, TouchableOpacity, TextInput, Switch } from 'react-native';
 import { BlurView } from "@react-native-community/blur";
 import moment from 'moment';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import * as BLE from '../services/BLEService';
 import * as BLE_C from '../constants/BLEConstants';
-
+import * as utils from '../services/UtilsService';
 
 import { theme, colors } from '../styles/theme';
 
@@ -106,8 +108,11 @@ export default function RFIDModal({ visible, setModalVisible, device, ...props }
       (value) => {
         console.log("(Settings-screen): RFID Detected Tag ID, value has changed.", utils.base64StrToHexStr(value));
         let rfidDetectedTagID = utils.base64StrToUInt32(value);
+        // update states
         setState(setRfidDetectedTagID, rfidDetectedTagID);
         setRfidLastDetection(Date.now());
+        // save to local storage
+        storeRfidDetectedTagID(device.getMAC(), {tagID: rfidDetectedTagID, timestamp: Date.now()});
       });
     }
     catch(error){ logError(monitorRfidDetectedTagIDHandler.name, error) }
@@ -119,6 +124,15 @@ export default function RFIDModal({ visible, setModalVisible, device, ...props }
       readRfidEnabledHanlder();
       readRfidPairedTagIDHandler();
     }, BLE_C.RFID_MONITOR_REFRESH_INTERVAL); // periodically read
+  }
+
+
+  const readRfidDetectedTagID = (deviceMac) => {
+    return AsyncStorage.getItem(`@DETECTED_TAG_ID:${deviceMac}`).then((data) => JSON.parse(data));
+  }
+
+  const storeRfidDetectedTagID = (deviceMac, rfidDetectedTagID) => {
+    AsyncStorage.setItem(`@DETECTED_TAG_ID:${deviceMac}`, JSON.stringify(rfidDetectedTagID));
   }
 
 
@@ -137,10 +151,16 @@ export default function RFIDModal({ visible, setModalVisible, device, ...props }
 
     readRfidEnabledHanlder();
     readRfidPairedTagIDHandler();
-    readRfidDetectedTagIDHandler();
-
     monitorRfidDetectedTagIDHandler();
     pollRfidEnabledAndPairedTagIDHanlder();
+
+    readRfidDetectedTagID(device.getMAC()).then(
+      (rfidDetectedTagID) => {
+        setRfidDetectedTagID(rfidDetectedTagID.tagID);
+        setRfidLastDetection(rfidDetectedTagID.timestamp);
+      }
+    )
+    .catch(() => {});
   }
 
   const onDestroy = () => {
@@ -199,15 +219,12 @@ export default function RFIDModal({ visible, setModalVisible, device, ...props }
 
                 <View style={[styles.layoutProperty, {marginBottom:5}]}>
                   <Text style={styles.property}>Detected Tag ID:</Text>
-                  <Text style={[styles.property, theme.textBold]}>{(rfidDetectedTagID === -1)? '' : (rfidDetectedTagID ?? '?')} </Text>
+                  <Text style={[styles.property, theme.textBold]}>{rfidDetectedTagID ?? ''}</Text>
                 </View>
 
                 <View style={styles.layoutProperty}>
                   <Text style={styles.property}>Last Detection:</Text>
-                  <Text style={[styles.property, theme.textBold]}>
-                    {(rfidDetectedTagID === -1)? '' : 
-                      (rfidLastDetection ? moment(rfidLastDetection).format('DD.MM HH:SS') : '?')}
-                  </Text>
+                  <Text style={[styles.property, theme.textBold]}>{(rfidLastDetection ? moment(rfidLastDetection).format('DD.MM HH:MM') : '')}</Text>
                 </View>
 
                 {/* <View style={styles.layoutProperty}>

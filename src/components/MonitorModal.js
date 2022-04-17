@@ -8,11 +8,12 @@ import * as BLE_C from '../constants/BLEConstants';
 import { theme, colors } from '../styles/theme';
 
 
-export default function MonitorModal({ visible, setModalVisible, device, ...props }) {
+export default function MonitorModal({ visible, setModalVisible, device, batteryVoltage, flashModeActive, ...props }) {
 
   const isMounted = useRef(null);
   const polled = useRef(null);
   const pollInterval = useRef(null);
+  const pollInterval2 = useRef(null);
 
   const [temperature, setTemperature] = useState(null);
   const [vled, setVLED] = useState(null);
@@ -35,10 +36,7 @@ export default function MonitorModal({ visible, setModalVisible, device, ...prop
 
   const readTemperatureHandler = () => {
     device.readTempratureCharacteristics().then(
-      (temperature) => { 
-        setState(setTemperature, temperature);
-        polled.current |= 0x100;
-      },
+      (temperature) => setState(setTemperature, temperature),
       (error) => { 
         setState(setTemperature, null)
         polled.current |= 0x100;
@@ -49,13 +47,9 @@ export default function MonitorModal({ visible, setModalVisible, device, ...prop
 
   const readVLEDHanlder = () => {
     device.readVLEDCharacteristics().then(
-      (vled) => {
-        setState(setVLED, vled); 
-        polled.current |= 0x010;
-      },
+      (vled) => setState(setVLED, vled),
       (error) => { 
         setState(setVLED, null);
-        polled.current |= 0x010;
         logError("VLED", error);
       }
     )
@@ -63,10 +57,7 @@ export default function MonitorModal({ visible, setModalVisible, device, ...prop
 
   const readISNSHandler = () => {
     device.readISNSCharacteristics().then(
-      (isns) => {
-        setState(setISNS, isns);
-        polled.current |= 0x001;
-      },
+      (isns) => setState(setISNS, isns),
       (error) => {
         setState(setISNS, null);
         polled.current |= 0x001;
@@ -79,25 +70,24 @@ export default function MonitorModal({ visible, setModalVisible, device, ...prop
     isMounted.current = true;
 
     readFWHWVersionHandler();
-
-    polled.current = 0x000;
     readTemperatureHandler();
     readVLEDHanlder();
     readISNSHandler();
 
     pollInterval.current = setInterval(() => {
-      if (polled.current != 0x111){
-        polled.current = 0x000;
-        readTemperatureHandler();
         readVLEDHanlder();
         readISNSHandler();
-      }
-    }, BLE_C.MONITOR_REFRESH_INTERVAL); // periodically read battery
+    }, BLE_C.MONITOR_REFRESH_VLED_ISNS_INTERVAL); // periodically read
+
+    pollInterval2.current = setInterval(() => {
+        readTemperatureHandler();
+    }, BLE_C.MONITOR_REFRESH_TEMPERATURE_INTERVAL); // periodically read
   }
 
   const onDestroy = () => {
     isMounted.current = false;
     clearInterval(pollInterval.current);
+    clearInterval(pollInterval2.current);
   }
 
   useEffect(() => {
@@ -133,7 +123,7 @@ export default function MonitorModal({ visible, setModalVisible, device, ...prop
 
                 <View style={styles.layoutProperty}>
                   <Text style={styles.propertyTitle}>Battery Voltage:</Text>
-                  <Text style={[styles.propertyTitle, theme.textBold]}> {'?'} mV</Text>
+                  <Text style={[styles.propertyTitle, theme.textBold]}> {batteryVoltage ?? '?'} mV</Text>
                 </View>
 
                 <View style={styles.layoutProperty}>
@@ -145,6 +135,12 @@ export default function MonitorModal({ visible, setModalVisible, device, ...prop
                   <Text style={styles.propertyTitle}>FW/HW Version:</Text>
                   <Text style={[styles.propertyTitle, theme.textBold]}> {fwHw?? '?'}</Text>
                 </View>
+
+                { flashModeActive? 
+                <View style={styles.layoutProperty}>
+                  <Text style={[styles.propertyTitle, {color: "red", fontSize: 14}]}>In FLASH modes the ISNS/VLED values might not be accurate!</Text>
+                </View> : null
+                }
               </View>
             </TouchableWithoutFeedback>
 

@@ -14,7 +14,7 @@ import MonitorIcon from '../icons/MonitorIcon';
 
 import theme from '../styles/theme';
 
-export default function DeviceCard({ device, batteryLevel, batteryCharge, rfidEnabled, ...props }) {
+export default function DeviceCard({ device, batteryLevel, batteryCharge, batteryVoltage, rfidEnabled, flashModeActive, ...props }) {
 
 
   const [modalRFIDVisible, setModalRFIDVisible] = useState(false);
@@ -108,7 +108,7 @@ export default function DeviceCard({ device, batteryLevel, batteryCharge, rfidEn
 
       </Card>
       {
-        modalMonitorVisible? <MonitorModal device={device} visible={true} setModalVisible={setModalMonitorVisible}></MonitorModal> : null
+        modalMonitorVisible? <MonitorModal device={device} visible={true} setModalVisible={setModalMonitorVisible} batteryVoltage={batteryVoltage} flashModeActive={flashModeActive}></MonitorModal> : null
       }
 
       {

@@ -62,8 +62,11 @@ export default function SettingsScreen({
 
 
   const [lightMode, setLightMode] = useState(DimLEDModes.UNKNOWN);
+  const [flashModeActive, setFlashModeActive] = useState(false);
   const [batteryLevel, dispatchBattery] = useReducer(batteryReducer, null);
+  const [batteryVoltage, setBatteryVoltage] = useState(null);
   const [batteryCharge, setBatteryCharge] = useState(null);
+
 
 
 
@@ -128,7 +131,7 @@ export default function SettingsScreen({
 
   const readBatteryLevelHandler = () => {
     device.readBatteryLevelCharacteristics().then(
-      (batteryLevel) => setState(dispatchBattery, batteryLevel),
+      ([batteryLevel, batteryVoltage]) => { setState(dispatchBattery, batteryLevel); setState(setBatteryVoltage, batteryVoltage) },
       (error) => { logError(readBatteryLevelHandler.name, error); setState(dispatchBattery, -1) }
     );
   };
@@ -143,8 +146,8 @@ export default function SettingsScreen({
   const monitorBatteryChargeHandler = () => {
     try {
       batteryChargeSubscription.current = BLE.monitorCharacteristic(
-        device.getBLEDevice(), BLE_C.SERVICE_MAINTENANCE,
-        device.getServiceCharacteristic(BLE_C.SERVICE_MAINTENANCE, BLE_C.CHARACTERISTIC_BATTERY_CHARGING_IDX).uuid, 
+        device.getBLEDevice(), BLE_C.SERVICE_MONITOR,
+        device.getServiceCharacteristic(BLE_C.SERVICE_MONITOR, BLE_C.CHARACTERISTIC_BATTERY_CHARGING_IDX).uuid, 
       (value) => {
         console.log("(Settings-screen): Battery charge, value has changed.", utils.base64StrToHexStr(value));
         let batteryCharge = utils.base64StrToUInt8(value);
@@ -238,6 +241,10 @@ export default function SettingsScreen({
     }
   }, [device]);
 
+  useEffect(() => {
+    setFlashModeActive(lightMode === DimLEDModes.FLASH_FAST || lightMode === DimLEDModes.FLASH_SLOW);
+  }, [lightMode]);
+
   return (
     <>
       <SafeAreaView style={styles.screen}>
@@ -246,7 +253,8 @@ export default function SettingsScreen({
 
         <View style={styles.deviceInfoWrapper}>
           {device ? 
-            <DeviceCard device={device} batteryCharge={batteryCharge} batteryLevel={batteryLevel} rfidEnabled={rfidEnabled}/>  : <ActivityIndicator size="large" />
+            <DeviceCard device={device} batteryCharge={batteryCharge} batteryLevel={batteryLevel} batteryVoltage={batteryVoltage} rfidEnabled={rfidEnabled} flashModeActive={flashModeActive}/>:
+            <ActivityIndicator size="large" />
           }
         </View>
 

@@ -117,7 +117,7 @@ export class SunFibreDevice{
 
 
 
-  //#region MAINTENANCE SERVICE
+  //#region MONITOR SERVICE
   /**
    * Promise to read battery level char. and parse them to integer
    * @param {*} sunFibreDevice: SunFibreDevice
@@ -125,15 +125,16 @@ export class SunFibreDevice{
    */
   readBatteryLevelCharacteristics() {
     console.log("(SFD): Reading Battery Level char.");
-    let ch = this.getServiceCharacteristic(BLE_C.SERVICE_MAINTENANCE, BLE_C.CHARACTERISTIC_BATTERY_LEVEL_IDX);
+    let ch = this.getServiceCharacteristic(BLE_C.SERVICE_MONITOR, BLE_C.CHARACTERISTIC_BATTERY_LEVEL_IDX);
     return BLE.readCharacteristics(this.device, ch).then(
-      value => utils.base64StrToUInt8(value)
+      // value => utils.base64StrToUInt8(value)
+      value => [utils.base64StrToBinaryArray(value).readUint8(), utils.base64StrToBinaryArray(value).readInt16LE(1)]
     );
   }
 
   readBatteryChargeCharacteristics() {
     console.log("(SFD):Reading Battery Charge char.");
-    let ch = this.getServiceCharacteristic(BLE_C.SERVICE_MAINTENANCE, BLE_C.CHARACTERISTIC_BATTERY_CHARGING_IDX);
+    let ch = this.getServiceCharacteristic(BLE_C.SERVICE_MONITOR, BLE_C.CHARACTERISTIC_BATTERY_CHARGING_IDX);
     return BLE.readCharacteristics(this.device, ch).then(
       value => utils.base64StrToUInt8(value)
     );
@@ -141,7 +142,7 @@ export class SunFibreDevice{
 
   readTempratureCharacteristics() {
     console.log("(SFD): Reading temperature char.");
-    let ch = this.getServiceCharacteristic(BLE_C.SERVICE_MAINTENANCE, BLE_C.CHARACTERISTIC_TEMPERATURE_IDX);
+    let ch = this.getServiceCharacteristic(BLE_C.SERVICE_MONITOR, BLE_C.CHARACTERISTIC_TEMPERATURE_IDX);
     return BLE.readCharacteristics(this.device, ch).then(
       value => utils.base64StrToInt32(value)
     );
