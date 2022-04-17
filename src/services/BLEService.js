@@ -5,38 +5,30 @@ import * as utils from './UtilsService';
 
 
 // #region LAYER: react-native-ble-plx 
-export function connect(device) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      // wait until connected
-      let connectedDevice = await device.connect({timeout: BLE_C.DEVICE_CONNECT_TIMEOUT});
-      console.log(`BLE: Device ${device.name} connected...`);
-      resolve(connectedDevice);
-    }
-    catch (error) {
+export const connect = (device) => {
+  return device.connect({timeout: BLE_C.DEVICE_CONNECT_TIMEOUT}).then(
+    (device) => { console.log(`BLE: Device ${device.name} connected...`); return device; },
+    (error) => {
       if (error.message === "Operation was cancelled")
         console.warn('WARN (BLE) connection timeout');
-      else
+      else 
         console.error('ERROR (BLE) connect:', error);
-      reject(new Error("Connect failed"));
+      throw new Error("Connect Failed");
     }
-  });
+  );
 }
 
-export function disconnect(device) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      let disconnectedDevice = await device.cancelConnection();
-      console.log(`(BLE): Device ${device.name} disconnected...`);
-      resolve(disconnectedDevice);
-    } catch (error) {
+export const disconnect = (device) => {
+  return device.cancelConnection().then(
+    (device) => { console.log(`(BLE): Device ${device.name} disconnected...`); return device; },
+    (error) => {
       console.error('ERROR (BLE) disconnect:', error);
-      reject(new Error("Disconnect failed"));
+      throw new Error("Disconnect Failed");
     }
-  });
+  );
 }
 
-export function getServicesAndCharacteristics(device) {
+export const getServicesAndCharacteristics = (device) => {
   console.log('BLE: Getting services & characteristics...');
 
   return new Promise(async (resolve, reject) => {
@@ -65,43 +57,36 @@ export function getServicesAndCharacteristics(device) {
   });
 }
 
-export function writeCharacteristics(device, characteristic, value_base64) {
-  return new Promise((resolve, reject) => {
-    characteristic.writeWithResponse(value_base64).then(
-      () => resolve(characteristic),
-      (error) => {
-        // if (error.message.endsWith("was disconnected")){
-        //   console.warn("(BLE): Disconnect in characteristics write...");
-        //   throw new Error(error);
-        // }
-        // else{
-          console.error("(BLE) error - writeCharacteristics:", error.message);
-          reject(new Error("Write failed"));
-        // }
+export const writeCharacteristics = (device, characteristic, value_base64) => {
+  return characteristic.writeWithResponse(value_base64).catch(
+    (error) => {
+      if (error.message.endsWith("was disconnected")){
+        console.log("(BLE): Disconnect during characteristics write...");
       }
-    );
-  });
-}
-
-export function readCharacteristics(device, characteristic) {
-
-  return new Promise((resolve, reject) => {
-    try {
-      //NOTE: this must be assigned to a new variable 
-      characteristic.read().then(
-        (readCharacteristics) => {
-          // console.log('(BLE) readCharacteristics: ', characteristic.uuid, utils.base64StrToHexStr(readCharacteristics.value));
-          resolve(utils.base64StrToBinaryArray(readCharacteristics.value));
-        }
-      )
-    } catch (error) {
-      console.error('ERROR (BLE) readCharacteristics:', error.message);
-      reject(new Error("(BLE): readCharacteristics failed"));
+      else{
+        console.error("(BLE) error - writeCharacteristics:", error.message);
+        throw new Error("(BLE): WriteCharacteristics failed");
+      }
     }
-  });
+  );
 }
 
-export function monitorCharacteristic(device, serviceUUID, characteristicUUID, onCharacteristicValueChangeHandler, onCharacteristicValueErrorHandler){
+export const readCharacteristics = (device, characteristic) => {
+  return characteristic.read().then(
+    (readCharacteristics) => utils.base64StrToBinaryArray(readCharacteristics.value),
+    (error) => {
+      if (error.message.endsWith("was disconnected")){
+        console.log("(BLE): Disconnect during characteristics read...");
+      }
+      else{
+        console.error('ERROR (BLE) readCharacteristics:', error.message);
+        throw new Error("(BLE): readCharacteristics failed");
+      }
+    }
+  )
+}
+
+export const monitorCharacteristic = (device, serviceUUID, characteristicUUID, onCharacteristicValueChangeHandler, onCharacteristicValueErrorHandler) => {
 
   return device.monitorCharacteristicForService(serviceUUID, characteristicUUID, (error, characteristic) => {
     if (error === null){
@@ -118,7 +103,7 @@ export function monitorCharacteristic(device, serviceUUID, characteristicUUID, o
   })
 }
 
-export function monitorDisconnection(device, onDeviceDisconnectedHandler){
+export const monitorDisconnection = (device, onDeviceDisconnectedHandler) => {
   console.log(`(BLE): Device ${device.name} listening disconnections...`);
 
   return device.onDisconnected((error, d) => {

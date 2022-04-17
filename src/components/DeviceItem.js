@@ -1,5 +1,5 @@
 import React, { useEffect, useContext, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, ActivityIndicator } from 'react-native';
 import { ListItem, Icon, Text } from 'react-native-elements';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Dialog from "react-native-dialog";
@@ -13,7 +13,7 @@ export default function DeviceItem({deviceListItem, navigation, ...props}) {
 
   const { setSunFibreDeviceToControl, connectSunFibreDevice } = useContext(DevicesContext);
 
-  const [deviceSelected, setDeviceSelected] = useState(false);
+  const [deviceLoading, setDeviceLoading] = useState(false);
   const [connectionErrorDialogVisible, setConnectionErrorDialogVisible] = useState(false);
   const [deviceName, setDeviceName] = useState(deviceListItem.item.getName());
 
@@ -24,35 +24,40 @@ export default function DeviceItem({deviceListItem, navigation, ...props}) {
     setConnectionErrorDialogVisible(false);
   }
 
-  const connectHandler = async () => {
+  const onDeviceConnected = (sunFibreDevice) => {
+
+    // select device at first
+    setSunFibreDeviceToControl(sunFibreDevice);
+    // navigate
+    navigation.navigate('Control');
+    // mark device as selected
+    setDeviceLoading(false);
+  }
+
+  const connectHandler = () => {
     
     // extract SunFibreDevice object from list item
     let sfd = deviceListItem.item;
     // set device as selected
     console.log("(Connections-screen): Setting selected device...", sfd.getName(), sfd.getMAC());
 
-    // select device at first
-    setSunFibreDeviceToControl(sfd);
-
     // connect to device if it is not connected
     if (!sfd.isConnected()){
-      try {
-        await connectSunFibreDevice(sfd);
-      }
-      catch(error){
-        console.error("(Connections-screen): Device cannot be connected", error);
-        showConnectionErrorDialog();
-        return;
-      }
+      connectSunFibreDevice(sfd).then(
+        () => onDeviceConnected(sfd),
+        (error) => {
+          console.error("(Connections-screen): Device cannot be connected", error);
+          showConnectionErrorDialog();
+        }
+      );
     }
-    // navigate
-    navigation.navigate('Control');
-    // mark device as selected
-    setDeviceSelected(false);
+
+    else
+      onDeviceConnected(sfd);
   };
 
   useEffect(() => {
-    setDeviceSelected(false);
+    setDeviceLoading(false);
   }, [])
 
   useEffect(() => {
@@ -71,8 +76,8 @@ export default function DeviceItem({deviceListItem, navigation, ...props}) {
   }
 
   const onDeviceSelected = () => {
-    if (!deviceSelected){
-      setDeviceSelected(true);
+    if (!deviceLoading){
+      setDeviceLoading(true);
       connectHandler()
     }
   }
@@ -86,14 +91,19 @@ export default function DeviceItem({deviceListItem, navigation, ...props}) {
         onPress={onDeviceSelected}
         style={styles.listItem}
         containerStyle={styles.listItemContainer}
-        disabled={deviceSelected}
+        disabled={deviceLoading}
       >
         <ListItem.Content style={styles}>
           <ListItem.Title>{deviceName}</ListItem.Title>
           <Text>MAC: {deviceListItem.item.getMAC()}</Text>
           <Text>RSSI: {deviceListItem.item.getRSSI()} dBm</Text>
         </ListItem.Content>
-        <Icon name="arrow-circle-right" size={25}  color={deviceListItem.item.isConnected() ? colors.battery5 : colors.primary } />
+        {
+          deviceLoading? 
+          <ActivityIndicator size="small" color={colors.yellow} />
+          :
+          <Icon name="arrow-circle-right" size={25}  color={deviceListItem.item.isConnected() ? colors.battery5 : colors.primary } />
+        }
       </ListItem>
 
       <Dialog.Container visible={connectionErrorDialogVisible} onBackdropPress={closeConnectionErrorDialog}>

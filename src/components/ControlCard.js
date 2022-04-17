@@ -121,7 +121,7 @@ export default function ControlCard({ batteryLevel, batteryCharge, batteryVoltag
       <Dialog.Container onBackdropPress={hideDialog} visible={promptVisible}>
         <Dialog.Title style={theme.dialogTitleText}>Rename Device</Dialog.Title>
         <Dialog.Description style={theme.dialogDescText}>
-          Please enter new name of the controlledDevice
+          Please enter new name of the device 
         </Dialog.Description>
         <Dialog.Input style={theme.dialogDefaultText} onChangeText={setDialogInput} value={dialogInput} />
         <Dialog.Button style={theme.dialogButtons} label="Save" onPress={handleDialogSubmit} />

@@ -14,15 +14,15 @@ const REFRESH_INTERVAL = 1000;
 
 export default function DeviceList({navigation, ...props}) {
 
-  const { devices, clearSunFibreDevices } = useContext(DevicesContext);
+  const { devices, clearSunFibreDevices, startScanningSunFibreDevices } = useContext(DevicesContext);
 
   const [refreshing, setRefreshing] = React.useState(false);
 
   //TODO: more UI stuff - might be redundant
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
-    clearDevices();
-    startScanDevices();
+    clearSunFibreDevices();
+    startScanningSunFibreDevices();
     wait(REFRESH_INTERVAL).then(() => {
       setRefreshing(false);
     });

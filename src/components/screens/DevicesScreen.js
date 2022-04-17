@@ -17,7 +17,6 @@ export default function DevicesScreen({navigation, ...props}) {
   const { devices, startScanningSunFibreDevices, stopScanningSunFibreDevices } = useContext(DevicesContext);
 
   const [scanErrorDialogVisible, setScanErrorDialogVisible] = useState(false);
-  // const [scanning, setScanning] = useState(false);
 
   const showScanErrorDialog = () => setScanErrorDialogVisible(true);
 
@@ -37,7 +36,6 @@ export default function DevicesScreen({navigation, ...props}) {
 
   useEffect(() => {
     startScanningSunFibreDevices(onScanErrorHandler);
-      // setScanning(true);
     return () => stopScanningSunFibreDevices(); 
   }, []);
 
