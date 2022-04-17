@@ -46,7 +46,7 @@ export default function DeviceItem({deviceListItem, navigation, ...props}) {
       }
     }
     // navigate
-    navigation.navigate('Settings');
+    navigation.navigate('Control');
     // mark device as selected
     setDeviceSelected(false);
   };

@@ -16,7 +16,7 @@ import MonitorIcon from '../icons/MonitorIcon';
 
 import theme from '../styles/theme';
 
-export default function DeviceCard({ batteryLevel, batteryCharge, batteryVoltage, rfidEnabled, flashModeActive, ...props }) {
+export default function ControlCard({ batteryLevel, batteryCharge, batteryVoltage, rfidEnabled, flashModeActive, ...props }) {
 
   const { controlledDevice } = useContext(DevicesContext);
 

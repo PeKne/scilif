@@ -25,7 +25,7 @@ export default function MonitorModal({ visible, setModalVisible, batteryVoltage,
   const [isns, setISNS] = useState(null);
   const [fwHw, setFwHw] = useState(null);
 
-  const logError = (charName, error) => console.warn(`(Settings-screen): Error in reading char: ${charName}`, error.message)
+  const logError = (charName, error) => console.warn(`(Control-screen): Error in reading char: ${charName}`, error.message)
 
   const setState = (setter, state) => isMounted.current? setter(state) : null;
 

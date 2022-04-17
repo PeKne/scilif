@@ -1,21 +1,19 @@
 import React, { useState, useEffect, useReducer, useRef, useContext } from 'react';
-import {
-  StyleSheet, View, ActivityIndicator, SafeAreaView,
-} from 'react-native';
+import { StyleSheet, View, ActivityIndicator, SafeAreaView } from 'react-native';
 import { Text, Button } from 'react-native-elements';
 import Dialog from "react-native-dialog";
 
 
-import StatusBar from '../components/StatusBar';
-import DeviceCard from '../components/DeviceCard';
+import StatusBar from '../StatusBar';
+import ControlCard from '../ControlCard';
 
-import { DevicesContext } from '../redux/DevicesContext';
+import { DevicesContext } from '../../redux/DevicesContext';
 
-import * as utils from '../services/UtilsService';
-import * as BLE from '../services/BLEService';
-import * as BLE_C from '../constants/BLEConstants';
+import * as utils from '../../services/UtilsService';
+import * as BLE from '../../services/BLEService';
+import * as BLE_C from '../../constants/BLEConstants';
 
-import theme, { colors } from '../styles/theme';
+import theme, { colors } from '../../styles/theme';
 
 
 const ON_DISCONNECT_DELAY = 3000;
@@ -29,7 +27,7 @@ const DimLEDModes = {
   UNKNOWN:    0x5,
 }
 
-export default function SettingsScreen({navigation, ...props }) {
+export default function ControlScreen({navigation, ...props }) {
 
   const { controlledDevice, disconnectSunFibreDevice, setSunFibreDeviceToControl } = useContext(DevicesContext);
 
@@ -73,7 +71,7 @@ export default function SettingsScreen({navigation, ...props }) {
   const [rfidEnabled, setRfidEnabled] = useState(false);
 
 
-  const logError = (funcName, error) => console.warn(`(Settings-screen): Error in ${funcName}`, error.message)
+  const logError = (funcName, error) => console.warn(`(Control-screen): Error in ${funcName}`, error.message)
 
   const setState = (setter, state) => isMounted.current? setter(state) : null;
 
@@ -84,7 +82,7 @@ export default function SettingsScreen({navigation, ...props }) {
 
   const monitorDisconnection = () => {
     disconnectSubscription.current = BLE.monitorDisconnection(controlledDevice.getBLEDevice(), () => {
-      console.log(`(Settings-screen): onDisconnectedSunFibreDevice ${controlledDevice.getName()}`);
+      console.log(`(Control-screen): onDisconnectedSunFibreDevice ${controlledDevice.getName()}`);
       onDestroy();
 
       showDisconnectDialog();
@@ -121,7 +119,7 @@ export default function SettingsScreen({navigation, ...props }) {
         controlledDevice.getBLEDevice(), BLE_C.SERVICE_LED_CONTROL,
         controlledDevice.getServiceCharacteristic(BLE_C.SERVICE_LED_CONTROL, BLE_C.CHARACTERISTIC_DIM_LED_IDX).uuid, 
       (value) => {
-        console.log("(Settings-screen): Dim LED, value has changed.", utils.base64StrToHexStr(value));
+        console.log("(Control-screen): Dim LED, value has changed.", utils.base64StrToHexStr(value));
         let dimLEDMode = utils.base64StrToUInt8(value);
         setState(setLightMode, dimLEDMode);
       });
@@ -149,7 +147,7 @@ export default function SettingsScreen({navigation, ...props }) {
         controlledDevice.getBLEDevice(), BLE_C.SERVICE_MONITOR,
         controlledDevice.getServiceCharacteristic(BLE_C.SERVICE_MONITOR, BLE_C.CHARACTERISTIC_BATTERY_CHARGING_IDX).uuid, 
       (value) => {
-        console.log("(Settings-screen): Battery charge, value has changed.", utils.base64StrToHexStr(value));
+        console.log("(Control-screen): Battery charge, value has changed.", utils.base64StrToHexStr(value));
         let batteryCharge = utils.base64StrToUInt8(value);
         setState(setBatteryCharge, batteryCharge);
       });
@@ -175,7 +173,7 @@ export default function SettingsScreen({navigation, ...props }) {
 
   const closeDisconnectDialog = () => {
     setDisconnectDialogVisible(false);
-    navigation.navigate('Connections');
+    navigation.navigate('Devices');
   }
 
   const onDestroy = () => {
@@ -186,19 +184,19 @@ export default function SettingsScreen({navigation, ...props }) {
 
     // cancel all subscriptions
     if (dimLEDSubscription.current){
-      console.debug("(Settings-screen): Dim LED subscription removed");
+      console.debug("(Control-screen): Dim LED subscription removed");
       dimLEDSubscription.current.remove();
       dimLEDSubscription.current = null;
     }
 
     if (batteryChargeSubscription.current){
-      console.debug("(Settings-screen): Battery Charge subscription removed");
+      console.debug("(Control-screen): Battery Charge subscription removed");
       batteryChargeSubscription.current.remove();
       batteryChargeSubscription.current = null;
     }
 
     if (disconnectSubscription.current){
-      console.debug("(Settings-screen): Disconnect subscription removed");
+      console.debug("(Control-screen): Disconnect subscription removed");
       disconnectSubscription.current.remove();
       disconnectSubscription.current = null;
     }
@@ -253,7 +251,7 @@ export default function SettingsScreen({navigation, ...props }) {
 
         <View style={styles.deviceInfoWrapper}>
           {controlledDevice ? 
-            <DeviceCard batteryCharge={batteryCharge} batteryLevel={batteryLevel} batteryVoltage={batteryVoltage} rfidEnabled={rfidEnabled} flashModeActive={flashModeActive}/>:
+            <ControlCard batteryCharge={batteryCharge} batteryLevel={batteryLevel} batteryVoltage={batteryVoltage} rfidEnabled={rfidEnabled} flashModeActive={flashModeActive}/>:
             <ActivityIndicator size="large" />
           }
         </View>

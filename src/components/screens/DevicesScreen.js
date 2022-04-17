@@ -4,15 +4,15 @@ import { StyleSheet, View } from 'react-native';
 import { Text } from 'react-native-elements';
 import Dialog from "react-native-dialog";
 
-import DeviceList from '../components/DeviceList';
-import StatusBar from '../components/StatusBar';
+import DeviceList from '../DeviceList';
+import StatusBar from '../StatusBar';
 
-import { DevicesContext } from '../redux/DevicesContext';
+import { DevicesContext } from '../../redux/DevicesContext';
 
-import theme, { colors } from '../styles/theme';
+import theme, { colors } from '../../styles/theme';
 
 
-export default function ConnectionsScreen({navigation, ...props}) {
+export default function DevicesScreen({navigation, ...props}) {
 
   const { devices, startScanningSunFibreDevices, stopScanningSunFibreDevices } = useContext(DevicesContext);
 

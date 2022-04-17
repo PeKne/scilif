@@ -31,7 +31,7 @@ export default function RFIDModal({ visible, setModalVisible, ...props }) {
   const rfidDetectedTagIDSubscription = useRef(null);
 
 
-  const logError = (charName, error) => console.warn(`(Settings-screen): Error in reading char: ${charName}`, error.message)
+  const logError = (charName, error) => console.warn(`(Control-screen): Error in reading char: ${charName}`, error.message)
 
   const setState = (setter, state) => isMounted.current? setter(state) : null;
 
@@ -111,7 +111,7 @@ export default function RFIDModal({ visible, setModalVisible, ...props }) {
         controlledDevice.getBLEDevice(), BLE_C.SERVICE_RFID,
         controlledDevice.getServiceCharacteristic(BLE_C.SERVICE_RFID, BLE_C.CHARACTERISTIC_RFID_DETECTED_TAG_ID_IDX).uuid, 
       (value) => {
-        console.log("(Settings-screen): RFID Detected Tag ID, value has changed.", utils.base64StrToHexStr(value));
+        console.log("(Control-screen): RFID Detected Tag ID, value has changed.", utils.base64StrToHexStr(value));
         let rfidDetectedTagID = utils.base64StrToUInt32(value);
         // update states
         setState(setRfidDetectedTagID, rfidDetectedTagID);
@@ -173,7 +173,7 @@ export default function RFIDModal({ visible, setModalVisible, ...props }) {
     clearInterval(pollInterval.current);
 
     if (rfidDetectedTagIDSubscription.current){
-      console.debug("(Settings-screen): RFID Detected Tag ID subscription removed");
+      console.debug("(Control-screen): RFID Detected Tag ID subscription removed");
       rfidDetectedTagIDSubscription.current.remove();
       rfidDetectedTagIDSubscription.current = null;
     }

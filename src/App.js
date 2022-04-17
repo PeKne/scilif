@@ -1,17 +1,18 @@
-import React, { useReducer, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { ThemeProvider } from 'react-native-elements';
 import { BleManager } from 'react-native-ble-plx';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
+
 import AppLoading from 'expo-app-loading';
 import * as Font from 'expo-font';
 import { FontAwesome } from '@expo/vector-icons';
 import { Asset } from 'expo-asset';
 
-import IntroScreen from './screens/IntroScreen';
-import ConnectionsScreen from './screens/ConnectionsScreen';
-import SettingsScreen from './screens/SettingsScreen';
+import IntroScreen from './components/screens/IntroScreen';
+import DevicesScreen from './components/screens/DevicesScreen';
+import ControlScreen from './components/screens/ControlScreen';
 
 import DevicesContextProvider from './redux/DevicesContextProvider';
 
@@ -70,12 +71,12 @@ export default function App() {
                 />}
               </Stack.Screen>
 
-              <Stack.Screen name="Connections">{(props) =>
-                <ConnectionsScreen {...props} />}
+              <Stack.Screen name="Devices">{(props) =>
+                <DevicesScreen {...props} />}
               </Stack.Screen>
 
-              <Stack.Screen name="Settings">{(props) =>
-                <SettingsScreen {...props} />}
+              <Stack.Screen name="Control">{(props) =>
+                <ControlScreen {...props} />}
               </Stack.Screen>
 
             </Stack.Navigator>
