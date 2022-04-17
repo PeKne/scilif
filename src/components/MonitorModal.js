@@ -11,47 +11,87 @@ import { theme, colors } from '../styles/theme';
 export default function MonitorModal({ visible, setModalVisible, device, ...props }) {
 
   const isMounted = useRef(null);
+  const polled = useRef(null);
   const pollInterval = useRef(null);
 
   const [temperature, setTemperature] = useState(null);
   const [vled, setVLED] = useState(null);
   const [isns, setISNS] = useState(null);
+  const [fwHw, setFwHw] = useState(null);
 
   const logError = (charName, error) => console.warn(`(Settings-screen): Error in reading char: ${charName}`, error.message)
 
   const setState = (setter, state) => isMounted.current? setter(state) : null;
 
+  const readFWHWVersionHandler = () => {
+    device.readFWHWVersionCharacteristics().then(
+      (version) => setState(setFwHw, version),
+      (error) => { 
+        setState(setFwHw, null);
+        logError("FwHW", error);
+      }
+    )
+  }
+
   const readTemperatureHandler = () => {
     device.readTempratureCharacteristics().then(
-      (temperature) => setState(setTemperature, temperature),
-      (error) => { logError("Temperature", error); setState(setTemperature, temperature)}
+      (temperature) => { 
+        setState(setTemperature, temperature);
+        polled.current |= 0x100;
+      },
+      (error) => { 
+        setState(setTemperature, null)
+        polled.current |= 0x100;
+        logError("Temperature", error);
+      }
     )
   };
 
   const readVLEDHanlder = () => {
     device.readVLEDCharacteristics().then(
-      (vled) => setState(setVLED, vled),
-      (error) => { logError("VLED", error); setState(setVLED, null)}
+      (vled) => {
+        setState(setVLED, vled); 
+        polled.current |= 0x010;
+      },
+      (error) => { 
+        setState(setVLED, null);
+        polled.current |= 0x010;
+        logError("VLED", error);
+      }
     )
   };
 
   const readISNSHandler = () => {
     device.readISNSCharacteristics().then(
-      (isns) => setState(setISNS, isns),
-      (error) => { logError("ISNS", error); setState(setISNS, null)}
+      (isns) => {
+        setState(setISNS, isns);
+        polled.current |= 0x001;
+      },
+      (error) => {
+        setState(setISNS, null);
+        polled.current |= 0x001;
+        logError("ISNS", error);
+      }
     )
   };
 
   const onStart = () => {
     isMounted.current = true;
+
+    readFWHWVersionHandler();
+
+    polled.current = 0x000;
     readTemperatureHandler();
     readVLEDHanlder();
     readISNSHandler();
 
     pollInterval.current = setInterval(() => {
-      readTemperatureHandler();
-      readVLEDHanlder();
-      readISNSHandler();
+      if (polled.current != 0x111){
+        polled.current = 0x000;
+        readTemperatureHandler();
+        readVLEDHanlder();
+        readISNSHandler();
+      }
     }, BLE_C.MONITOR_REFRESH_INTERVAL); // periodically read battery
   }
 
@@ -100,20 +140,16 @@ export default function MonitorModal({ visible, setModalVisible, device, ...prop
                   <Text style={styles.propertyTitle}>MCU Temperature:</Text>
                   <Text style={[styles.propertyTitle, theme.textBold]}> {temperature ?? '?'} °C</Text>
                 </View>
+
+                <View style={styles.layoutProperty}>
+                  <Text style={styles.propertyTitle}>FW/HW Version:</Text>
+                  <Text style={[styles.propertyTitle, theme.textBold]}> {fwHw?? '?'}</Text>
+                </View>
               </View>
             </TouchableWithoutFeedback>
 
           </View>
         </TouchableOpacity>
-
-
-
-            {/* <Pressable
-              style={[theme.layoutProperty, styles.button, styles.buttonClose]}
-              onPress={() => setModalVisible(false)}
-            >
-            <Text style={styles.textStyle}>Hide Modal</Text>
-            </Pressable> */}
       </Modal>
     </>
   );

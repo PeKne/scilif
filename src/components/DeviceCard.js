@@ -5,14 +5,16 @@ import Dialog from "react-native-dialog";
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import MonitorModal from './MonitorModal';
 import BatteryIndicator from './BatteryIndicator';
+import MonitorModal from './MonitorModal';
+import RFIDModal from './RFIDModal';
+
 import RFIDIcon from '../icons/RFIDIcon';
 import MonitorIcon from '../icons/MonitorIcon';
 
 import theme from '../styles/theme';
 
-export default function DeviceCard({ device, batteryLevel, batteryCharge,...props }) {
+export default function DeviceCard({ device, batteryLevel, batteryCharge, rfidEnabled, ...props }) {
 
 
   const [modalRFIDVisible, setModalRFIDVisible] = useState(false);
@@ -95,8 +97,8 @@ export default function DeviceCard({ device, batteryLevel, batteryCharge,...prop
           </View>
 
           <View style={theme.layoutProperty}>
-            <TouchableOpacity onPress={openRFIDModal}>
-              <RFIDIcon width={35}  height={35} fill={"white"}  />
+            <TouchableOpacity onPress={openRFIDModal} disabled={!rfidEnabled}>
+              <RFIDIcon width={35}  height={35} fill={rfidEnabled? "white" : "grey"}  />
             </TouchableOpacity>
             <TouchableHighlight onPress={openMonitorModal}>
               <MonitorIcon width={35} height={35} fill={"white"} />
@@ -107,6 +109,10 @@ export default function DeviceCard({ device, batteryLevel, batteryCharge,...prop
       </Card>
       {
         modalMonitorVisible? <MonitorModal device={device} visible={true} setModalVisible={setModalMonitorVisible}></MonitorModal> : null
+      }
+
+      {
+        modalRFIDVisible? <RFIDModal device={device} visible={true} setModalVisible={setModalRFIDVisible}></RFIDModal> : null
       }
 
       <Dialog.Container onBackdropPress={hideDialog} visible={promptVisible}>

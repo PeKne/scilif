@@ -10,6 +10,7 @@ export default function DeviceItem({
   deviceListItem, navigation, connectDevice, setSelectedDevice, ...props
 }) {
 
+  const [deviceSelected, setDeviceSelected] = useState(false);
   const [connectionErrorDialogVisible, setConnectionErrorDialogVisible] = useState(false);
   const [deviceName, setDeviceName] = useState(deviceListItem.item.getName());
 
@@ -21,7 +22,7 @@ export default function DeviceItem({
   }
 
   const connectHandler = async () => {
-
+    
     // extract SunFibreDevice object from list item
     let sfd = deviceListItem.item;
     // set device as selected
@@ -30,20 +31,27 @@ export default function DeviceItem({
     // select device at first
     setSelectedDevice(sfd);
 
+
     // connect to device if it is not connected
     if (!sfd.isConnected()){
       try {
         await connectDevice(sfd);
       }
       catch(error){
-        console.error("(Connections-screen): Device cannot be connected");
+        console.error("(Connections-screen): Device cannot be connected", error);
         showConnectionErrorDialog();
         return;
       }
     }
     // navigate
     navigation.navigate('Settings');
+    // mark device as selected
+    setDeviceSelected(false);
   };
+
+  useEffect(() => {
+    setDeviceSelected(false);
+  }, [])
 
   useEffect(() => {
     const fetchDeviceName = async () => {
@@ -53,10 +61,18 @@ export default function DeviceItem({
       }
     }
     fetchDeviceName()
+
   }, [deviceListItem])
 
   const readDeviceName = async (device_mac) => {
     return await AsyncStorage.getItem(`@DEVICE__NAME:${device_mac}`)
+  }
+
+  const onDeviceSelected = () => {
+    if (!deviceSelected){
+      setDeviceSelected(true);
+      connectHandler()
+    }
   }
 
   return (
@@ -65,9 +81,10 @@ export default function DeviceItem({
         key={deviceListItem.index}
         chevron
         rightIcon={{ name: 'av-timer' }}
-        onPress={connectHandler}
+        onPress={onDeviceSelected}
         style={styles.listItem}
         containerStyle={styles.listItemContainer}
+        disabled={deviceSelected}
       >
         <ListItem.Content style={styles}>
           <ListItem.Title>{deviceName}</ListItem.Title>

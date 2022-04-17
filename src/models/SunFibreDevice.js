@@ -71,6 +71,8 @@ export class SunFibreDevice{
 
 
   // #region BLE functions
+
+  //#region LED CONTROL SERVICE
   /**
    * Promise to write dim LED char.
    * @param {*} sunFibreDevice: SunFibreDevice
@@ -79,8 +81,8 @@ export class SunFibreDevice{
   writeDimLEDCharacteristics(value) {
     console.log("(SFD): Writing Dim LED char.: ", value);
     const ch = this.getServiceCharacteristic(BLE_C.SERVICE_LED_CONTROL, BLE_C.CHARACTERISTIC_DIM_LED_IDX);
-    console.log("(SFD): char.: ", ch.uuid, ch.deviceID, ch.serviceUUID);
-    return BLE.writeCharacteristics(this.device, ch, value);
+    const value_base64 = utils.UInt8Tobase64Str(value);
+    return BLE.writeCharacteristics(this.device, ch, value_base64);
   }
 
   /**
@@ -111,9 +113,11 @@ export class SunFibreDevice{
       value => utils.base64StrToInt16(value)
     );
   }
+  //#endregion
 
 
 
+  //#region MAINTENANCE SERVICE
   /**
    * Promise to read battery level char. and parse them to integer
    * @param {*} sunFibreDevice: SunFibreDevice
@@ -142,5 +146,57 @@ export class SunFibreDevice{
       value => utils.base64StrToInt32(value)
     );
   }
+  //#endregion
+
+  //#region RFID SERVICE
+  writeRfidEnabledCharacteristics(value) {
+    console.log("(SFD): Writing RFID Enabled char.: ", value);
+    const ch = this.getServiceCharacteristic(BLE_C.SERVICE_RFID, BLE_C.CHARACTERISTIC_RFID_ENABLED_IDX);
+    value = utils.UInt8Tobase64Str(value);
+    return BLE.writeCharacteristics(this.device, ch, value, 1);
+  }
+
+  writeRfidPairedTagIDCharacteristics(value) {
+    console.log("(SFD): Writing RFID Paired Tag char.: ", value);
+    const ch = this.getServiceCharacteristic(BLE_C.SERVICE_RFID, BLE_C.CHARACTERISTIC_RFID_PAIRED_TAG_ID_IDX);
+    const value_base64 = utils.UInt32Tobase64Str(value);
+    return BLE.writeCharacteristics(this.device, ch, value_base64);
+  }
+
+  readRfidEnabledCharacteristics() {
+    console.log("(SFD):Reading RFID Enabled char.");
+    let ch = this.getServiceCharacteristic(BLE_C.SERVICE_RFID, BLE_C.CHARACTERISTIC_RFID_ENABLED_IDX);
+    return BLE.readCharacteristics(this.device, ch).then(
+      value => utils.base64StrToUInt8(value)
+    );
+  }
+
+  readRfidPairedTagIDCharacteristics() {
+    console.log("(SFD): Reading RFID Paired Tag char.");
+    let ch = this.getServiceCharacteristic(BLE_C.SERVICE_RFID, BLE_C.CHARACTERISTIC_RFID_PAIRED_TAG_ID_IDX);
+    return BLE.readCharacteristics(this.device, ch).then(
+      value => !utils.isValueUInt32Max(value)? utils.base64StrToUInt32(value) : -1 
+    );
+  }
+
+  readRfidDetectedTagIDCharacteristics() {
+    console.log("(SFD): Reading RFID Detected Tag char.");
+    let ch = this.getServiceCharacteristic(BLE_C.SERVICE_RFID, BLE_C.CHARACTERISTIC_RFID_DETECTED_TAG_ID_IDX);
+    return BLE.readCharacteristics(this.device, ch).then(
+      value => !utils.isValueUInt32Max(value)? utils.base64StrToUInt32(value) : -1 
+    );
+  }
+  //#endregion
+
+  //#region DIS
+  readFWHWVersionCharacteristics() {
+    console.log("(SFD): Reading DIS FW / HW char.");
+    let ch = this.getServiceCharacteristic(BLE_C.SERVICE_DIS, BLE_C.CHARACTERISTIC_DIS_FW_HW_VERSION);
+    return BLE.readCharacteristics(this.device, ch).then(
+      value => utils.base64StrToStr(value)
+    );
+  }
+  //#endregion
+
   // #endregion
 }

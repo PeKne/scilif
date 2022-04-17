@@ -1,7 +1,7 @@
 import React, { useReducer, useEffect, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { ThemeProvider } from 'react-native-elements';
-import { BleManager } from 'react-native-ble-plx';
+import { BleManager, ScanMode } from 'react-native-ble-plx';
 import { createStackNavigator } from '@react-navigation/stack';
 import { NavigationContainer } from '@react-navigation/native';
 import AppLoading from 'expo-app-loading';
@@ -239,7 +239,7 @@ export default function App() {
 
     addAlreadyConnectedDevices();
 
-    manager.startDeviceScan([BLE_C.SERVICE_LED_CONTROL], { allowDuplicates: false }, (error, device) => {
+    manager.startDeviceScan([BLE_C.SERVICE_LED_CONTROL], { allowDuplicates: false, scanMode: ScanMode.LowLatency}, (error, device) => {
       if (error) {
         // Handle error (scanning will be stopped automatically)
         if (onScanError) onScanError(error);
@@ -330,7 +330,6 @@ export default function App() {
               <SettingsScreen {...props}
                 device={selectedDevice}
                 setSelectedDevice={setSelectedDevice}
-                disconnectDevice={disconnectSunFibreDevice}
               />}
             </Stack.Screen>
 

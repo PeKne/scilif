@@ -45,6 +45,7 @@ export function getServicesAndCharacteristics(device) {
       await device.discoverAllServicesAndCharacteristics();
       // await device ble services and filter
       let services = await device.services();
+      console.log(services.map(s => s.uuid))
       services = services.filter((s) => BLE_C.DEVICE_SERVICES.includes(s.uuid));
 
       // map services and characteristics
@@ -64,9 +65,9 @@ export function getServicesAndCharacteristics(device) {
   });
 }
 
-export function writeCharacteristics(device, characteristic, value) {
+export function writeCharacteristics(device, characteristic, value_base64) {
   return new Promise((resolve, reject) => {
-    characteristic.writeWithResponse(utils.binaryArrayToBase64Str([value])).then(
+    characteristic.writeWithResponse(value_base64).then(
       () => resolve(characteristic),
       (error) => {
         // if (error.message.endsWith("was disconnected")){
@@ -81,22 +82,6 @@ export function writeCharacteristics(device, characteristic, value) {
     );
   });
 }
-
-// export function readCharacteristics(device, characteristic) {
-
-//   return new Promise(async (resolve, reject) => {
-
-//     try {
-//       //NOTE: this must be assigned to a new variable 
-//       let readCharacteristics = await characteristic.read();
-//       console.log('(BLE) readCharacteristics: ', characteristic.uuid, utils.base64StrToHexStr(readCharacteristics.value));
-//       resolve(utils.base64StrToBinaryArray(readCharacteristics.value));
-//     } catch (error) {
-//       console.error('ERROR (BLE) readCharacteristics:', error.message);
-//       reject(new Error("Read failed"));
-//     }
-//   });
-// }
 
 export function readCharacteristics(device, characteristic) {
 

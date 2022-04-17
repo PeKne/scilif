@@ -30,8 +30,7 @@ const DimLEDModes = {
 export default function SettingsScreen({
   navigation,
   device, setSelectedDevice,
-  disconnectDevice,
-   ...props
+  ...props
 }) {
 
   const isMounted = useRef(null);
@@ -40,6 +39,7 @@ export default function SettingsScreen({
   const dimLEDSubscription = useRef(null);
   const batteryChargeSubscription = useRef(null);
   const disconnectSubscription = useRef(null);
+
 
   const batteryReducer = (prevState, action) => {
     switch (action) {
@@ -62,9 +62,12 @@ export default function SettingsScreen({
 
 
   const [lightMode, setLightMode] = useState(DimLEDModes.UNKNOWN);
-
   const [batteryLevel, dispatchBattery] = useReducer(batteryReducer, null);
   const [batteryCharge, setBatteryCharge] = useState(null);
+
+
+
+  const [rfidEnabled, setRfidEnabled] = useState(false);
 
 
   const logError = (funcName, error) => console.warn(`(Settings-screen): Error in ${funcName}`, error.message)
@@ -73,8 +76,18 @@ export default function SettingsScreen({
 
   //#region BLE Handlers
   const disconnectHandler = () => {
-    disconnectDevice(device);
+    BLE.disconnect(device.getBLEDevice());
   };
+
+  const monitorDisconnection = () => {
+    disconnectSubscription.current = BLE.monitorDisconnection(device.getBLEDevice(), () => {
+      console.log(`(Settings-screen): onDisconnectedSunFibreDevice ${device.getName()}`);
+      onDestroy();
+
+      showDisconnectDialog();
+      setTimeout(() => closeDisconnectDialog(), ON_DISCONNECT_DELAY);
+    });
+  }
 
   const writeDimLEDHandler = (newMode) => {
     // preserve current mode
@@ -145,7 +158,7 @@ export default function SettingsScreen({
   const pollBatteryLevel = () => {
     pollInterval.current = setInterval(() => {
       readBatteryLevelHandler();
-    }, BLE_C.MONITOR_REFRESH_INTERVAL); // periodically read battery
+    }, BLE_C.SETTINGS_REFRESH_INTERVAL); // periodically read battery
   }
   //#endregion
 
@@ -215,15 +228,13 @@ export default function SettingsScreen({
 
   // unselect device at the end
   useEffect(() => {
-    console.log("Settings screen",  device?.name, device?.servicesCharacteristics?.[BLE_C.SERVICE_LED_CONTROL]?.[BLE_C.CHARACTERISTIC_DIM_LED_IDX])
+    // console.log("Settings screen",  device?.name, device?.servicesCharacteristics?.[BLE_C.SERVICE_LED_CONTROL]?.[BLE_C.CHARACTERISTIC_DIM_LED_IDX])
     if (device){
-      disconnectSubscription.current = BLE.monitorDisconnection(device.getBLEDevice(), () => {
-        console.log(`(Settings-screen): onDisconnectedSunFibreDevice ${device.getName()}`);
-        onDestroy();
+      // monitor disconnection
+      monitorDisconnection();
 
-        showDisconnectDialog();
-        setTimeout(() => closeDisconnectDialog(), ON_DISCONNECT_DELAY);
-      })
+      // check RFID presence
+      setRfidEnabled(device.getService(BLE_C.SERVICE_RFID) !== undefined);
     }
   }, [device]);
 
@@ -235,7 +246,7 @@ export default function SettingsScreen({
 
         <View style={styles.deviceInfoWrapper}>
           {device ? 
-            <DeviceCard device={device} batteryCharge={batteryCharge} batteryLevel={batteryLevel}/>  : <ActivityIndicator size="large" />
+            <DeviceCard device={device} batteryCharge={batteryCharge} batteryLevel={batteryLevel} rfidEnabled={rfidEnabled}/>  : <ActivityIndicator size="large" />
           }
         </View>
 
