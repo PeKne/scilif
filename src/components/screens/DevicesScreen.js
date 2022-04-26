@@ -10,10 +10,12 @@ import StatusBar from '../StatusBar';
 import { DevicesContext } from '../../redux/DevicesContext';
 
 import theme, { colors } from '../../styles/theme';
+import { useIsFocused } from '@react-navigation/native';
 
 
 export default function DevicesScreen({navigation, ...props}) {
 
+  const isFocused = useIsFocused();
   const { devices, startScanningSunFibreDevices, stopScanningSunFibreDevices } = useContext(DevicesContext);
 
   const [scanErrorDialogVisible, setScanErrorDialogVisible] = useState(false);
@@ -35,9 +37,11 @@ export default function DevicesScreen({navigation, ...props}) {
   }
 
   useEffect(() => {
-    startScanningSunFibreDevices(onScanErrorHandler);
-    return () => stopScanningSunFibreDevices(); 
-  }, []);
+    if (isFocused)
+      startScanningSunFibreDevices(onScanErrorHandler);
+    else
+      stopScanningSunFibreDevices(); 
+  }, [isFocused]);
 
   return (
     <>

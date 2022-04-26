@@ -3,7 +3,6 @@ import { StyleSheet, View, ActivityIndicator, SafeAreaView } from 'react-native'
 import { Text, Button } from 'react-native-elements';
 import Dialog from "react-native-dialog";
 
-
 import StatusBar from '../StatusBar';
 import ControlCard from '../ControlCard';
 
@@ -247,23 +246,25 @@ export default function ControlScreen({navigation, ...props }) {
     <>
       <SafeAreaView style={styles.screen}>
         <StatusBar navigation={navigation} />
+
         <Text h1>Device Control</Text>
 
-        <View style={styles.deviceInfoWrapper}>
-          {controlledDevice ? 
-            <ControlCard batteryCharge={batteryCharge} batteryLevel={batteryLevel} batteryVoltage={batteryVoltage} rfidEnabled={rfidEnabled} flashModeActive={flashModeActive}/>:
-            <ActivityIndicator size="large" />
-          }
-        </View>
+          <View style={styles.deviceInfoWrapper}>
+            {controlledDevice ? 
+              <ControlCard batteryCharge={batteryCharge} batteryLevel={batteryLevel} batteryVoltage={batteryVoltage} rfidEnabled={rfidEnabled} flashModeActive={flashModeActive}/>
+            :
+              <ActivityIndicator size="large" />
+            }
+          </View>
 
-        <View style={styles.buttonWrapper}>
-          <OptionButton disabled={!controlledDevice || lightMode === DimLEDModes.OFF} title="OFF" onPress={() => writeDimLEDHandler(DimLEDModes.OFF)} />
-          <OptionButton disabled={!controlledDevice || lightMode === DimLEDModes.ON_STRONG} title="ON STRONG" onPress={() => writeDimLEDHandler(DimLEDModes.ON_STRONG)} />
-          <OptionButton disabled={!controlledDevice || lightMode === DimLEDModes.ON_MILD} title="ON MILD" onPress={() => writeDimLEDHandler(DimLEDModes.ON_MILD)} />
-          <OptionButton disabled={!controlledDevice || lightMode === DimLEDModes.FLASH_SLOW} title="FLASH SLOW" onPress={() => writeDimLEDHandler(DimLEDModes.FLASH_SLOW)} />
-          <OptionButton disabled={!controlledDevice || lightMode === DimLEDModes.FLASH_FAST} title="FLASH FAST" onPress={() => writeDimLEDHandler(DimLEDModes.FLASH_FAST)} />
-          <Button title="Disconnect" disabled={!controlledDevice} titleStyle={styles.disconnectButtonTitle} onPress={disconnectHandler} />
-        </View>
+          <View style={styles.buttonWrapper}>
+            <OptionButton disabled={!controlledDevice || lightMode === DimLEDModes.OFF} title="OFF" onPress={() => writeDimLEDHandler(DimLEDModes.OFF)} />
+            <OptionButton disabled={!controlledDevice || lightMode === DimLEDModes.ON_STRONG} title="ON STRONG" onPress={() => writeDimLEDHandler(DimLEDModes.ON_STRONG)} />
+            <OptionButton disabled={!controlledDevice || lightMode === DimLEDModes.ON_MILD} title="ON MILD" onPress={() => writeDimLEDHandler(DimLEDModes.ON_MILD)} />
+            <OptionButton disabled={!controlledDevice || lightMode === DimLEDModes.FLASH_SLOW} title="FLASH SLOW" onPress={() => writeDimLEDHandler(DimLEDModes.FLASH_SLOW)} />
+            <OptionButton disabled={!controlledDevice || lightMode === DimLEDModes.FLASH_FAST} title="FLASH FAST" onPress={() => writeDimLEDHandler(DimLEDModes.FLASH_FAST)} />
+            <Button title="Disconnect" disabled={!controlledDevice} titleStyle={styles.disconnectButtonTitle} onPress={disconnectHandler} />
+          </View>
       </SafeAreaView>
 
       {/* "ENABLE DISCONNECT POPUP" */}

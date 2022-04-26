@@ -93,23 +93,23 @@ export const theme = {
 
 
   dialogTitleText: {
-    color: Platform.OS === "android" ? colors.secondary : colors.primary,
+    color: Platform.OS === "android" ? colors.secondary : colors.secondary,
     backgroundColor: Platform.OS === "android" ? colors.primary : "transparent",
     fontWeight: "bold"
   },
 
   dialogDefaultText: {
-    color: Platform.OS === "android" ? colors.secondary : colors.primary,
+    color: Platform.OS === "android" ? colors.secondary : colors.secondary,
     backgroundColor: Platform.OS === "android" ? colors.primary : "transparent",
   },
 
   dialogDescText: {
-    color: Platform.OS === "android" ? "#808080" : colors.primary,
+    color: Platform.OS === "android" ? "#808080" : colors.secondary,
     backgroundColor: Platform.OS === "android" ? colors.primary : "transparent",
   },
 
   dialogButtons: {
-    color: Platform.OS === "android" ? colors.red : colors.primary,
+    color: Platform.OS === "android" ? colors.red : colors.red,
     backgroundColor: Platform.OS === "android" ? colors.primary : "transparent",
     fontWeight: "bold"
   },

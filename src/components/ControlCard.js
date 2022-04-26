@@ -77,7 +77,9 @@ export default function ControlCard({ batteryLevel, batteryCharge, batteryVoltag
       <Card>
         <View style={{flexDirection: "row", justifyContent: "center"}}>
           <Card.Title style={styles.deviceTitle}>{deviceName} {"  "} </Card.Title>
-          <Icon name={"pencil"} size={20} onPress={showDialog} />
+          <TouchableOpacity onPress={showDialog} hitSlop={{top: 20, bottom: 20, left: 20, right: 20}}>
+            <Icon name={"pencil"} size={20} />
+          </TouchableOpacity>
         </View>
         <Card.Divider />
         <View style={theme.layout}>
@@ -132,7 +134,6 @@ export default function ControlCard({ batteryLevel, batteryCharge, batteryVoltag
 }
 
 const styles = StyleSheet.create({
-
   propertyTitle: {
     fontSize: 16,
   },

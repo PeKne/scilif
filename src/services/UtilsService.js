@@ -32,23 +32,23 @@ export function base64StrToStr(value) {
 
 
 export function base64StrToBinaryArray(value) {
-  return Buffer.from(value, 'base64');
+  return value? Buffer.from(value, 'base64') : undefined;
 }
 
 export function base64StrToUInt8(value){
-  return base64StrToBinaryArray(value).readUInt8();
+  return base64StrToBinaryArray(value)?.readUInt8();
 }
 
 export function base64StrToInt16(value){
-  return base64StrToBinaryArray(value).readInt16LE();
+  return base64StrToBinaryArray(value)?.readInt16LE();
 }
 
 export function base64StrToInt32(value){
-  return base64StrToBinaryArray(value).readInt32LE();
+  return base64StrToBinaryArray(value)?.readInt32LE();
 }
 
 export function base64StrToUInt32(value){
-  return base64StrToBinaryArray(value).readUInt32LE();
+  return base64StrToBinaryArray(value)?.readUInt32LE();
 }
 
 export function UInt32Tobase64Str(value){

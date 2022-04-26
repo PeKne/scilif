@@ -48,6 +48,7 @@ export default function DeviceItem({deviceListItem, navigation, ...props}) {
         (error) => {
           console.error("(Connections-screen): Device cannot be connected", error);
           showConnectionErrorDialog();
+          setDeviceLoading(false);
         }
       );
     }
