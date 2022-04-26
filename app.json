@@ -2,7 +2,7 @@
     "expo": {
         "name": "SunFibre Native",
         "slug": "scilif",
-        "version": "2.0.2",
+        "version": "2.0.3",
         "orientation": "portrait",
         "icon": "./resources/images/favicon_apple.png",
         "splash": {
