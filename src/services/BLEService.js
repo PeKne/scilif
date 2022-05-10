@@ -11,9 +11,9 @@ export const connect = (device) => {
     (error) => {
       if (error.message === "Operation was cancelled")
         console.warn('WARN (BLE) connection timeout');
-      else 
+      else
         console.error('ERROR (BLE) connect:', error);
-      throw new Error("Connect Failed");
+      throw new Error(error);
     }
   );
 }

@@ -9,29 +9,49 @@ import { DevicesContext } from '../redux/DevicesContext';
 
 import theme, {colors} from '../styles/theme';
 
+
 export default function DeviceItem({deviceListItem, navigation, ...props}) {
+
+  const ERRORS = {
+    CONNECTION_REJECTED_DISCONNECTED_MSG: "Device cannot be connected, did you pair the device, or do you have a valid pairing key?",
+    CHARACTERISTIC_REJECTED_MSG: "Device was connected, but authentication failed. Don't you have an outdated pairing key?",
+    CONNECTION_REJECTED_OTHER_MSG: "Device cannot be connected. Please, try to refresh the list of devices."
+  }
+
 
   const { setSunFibreDeviceToControl, connectSunFibreDevice } = useContext(DevicesContext);
 
   const [deviceLoading, setDeviceLoading] = useState(false);
-  const [connectionErrorDialogVisible, setConnectionErrorDialogVisible] = useState(false);
+  const [connectionErrorDialog, setConnectionErrorDialog] = useState({visible: false});
   const [deviceName, setDeviceName] = useState(deviceListItem.item.getName());
 
-  const showConnectionErrorDialog = () => {
-    setConnectionErrorDialogVisible(true);
+  const showConnectionErrorDialog = (error) => {
+    setConnectionErrorDialog({visible: true, msg: ERRORS[error]});
   }
   const closeConnectionErrorDialog = () => {
-    setConnectionErrorDialogVisible(false);
+    setConnectionErrorDialog({visible: false, msg: connectionErrorDialog.msg});
   }
 
   const onDeviceConnected = (sunFibreDevice) => {
 
-    // select device at first
-    setSunFibreDeviceToControl(sunFibreDevice);
-    // navigate
-    navigation.navigate('Control');
-    // mark device as selected
-    setDeviceLoading(false);
+	//TODO: dialog is not showing 
+    sunFibreDevice.readDimLEDCharacteristics().then(
+      () => {
+        // select device at first
+        setSunFibreDeviceToControl(sunFibreDevice);
+        // navigate
+        navigation.navigate('Control');
+        // mark device as selected
+        setDeviceLoading(false);
+      }
+    ).catch( 
+      (error) => {
+        console.warn("(Connections-screen): Device characteristics cannot be read", error);
+        showConnectionErrorDialog("CHARACTERISTIC_REJECTED_MSG");
+        // mark device as selected
+        setDeviceLoading(false);
+      }
+    )
   }
 
   const connectHandler = () => {
@@ -43,14 +63,16 @@ export default function DeviceItem({deviceListItem, navigation, ...props}) {
 
     // connect to device if it is not connected
     if (!sfd.isConnected()){
-      connectSunFibreDevice(sfd).then(
+      connectSunFibreDevice(sfd)
+      .then(
         () => onDeviceConnected(sfd),
         (error) => {
-          console.error("(Connections-screen): Device cannot be connected", error);
-          showConnectionErrorDialog();
+          console.warn("(Connections-screen): Device cannot be connected", error);
+          showConnectionErrorDialog(error.message.endsWith("was disconnected")? 
+            "CONNECTION_REJECTED_DISCONNECTED_MSG" : "CONNECTION_REJECTED_OTHER_MSG");
           setDeviceLoading(false);
         }
-      );
+      )
     }
 
     else
@@ -107,10 +129,10 @@ export default function DeviceItem({deviceListItem, navigation, ...props}) {
         }
       </ListItem>
 
-      <Dialog.Container visible={connectionErrorDialogVisible} onBackdropPress={closeConnectionErrorDialog}>
+      <Dialog.Container visible={connectionErrorDialog.visible} onBackdropPress={closeConnectionErrorDialog}>
         <Dialog.Title style={theme.dialogTitleText}>Device Connection</Dialog.Title>
         <Dialog.Description style={theme.dialogDescText}>
-          Device cannot be connected. Please, try to refresh the list of devices.
+          {connectionErrorDialog.msg}
         </Dialog.Description>
       </Dialog.Container>
     </>
