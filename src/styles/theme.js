@@ -114,6 +114,14 @@ export const theme = {
     fontWeight: "bold"
   },
 
+
+  //#region TEXT
+  boldText:{
+    fontWeight: "bold"
+  },
+
+  //#endregion
+
   //#region LAYOUT
   layout: {
     flexDirection: 'column',

@@ -199,5 +199,14 @@ export class SunFibreDevice{
   }
   //#endregion
 
+  //#region DIS
+  writeDFUButtonlessCharacteristics(value) {
+    console.log("(SFD): Writing DFU Buttonless char.");
+    let ch = this.getServiceCharacteristic(BLE_C.SERVICE_DFU_ACTIVATION, BLE_C.CHARACTERISTIC_DFU_BUTTONLESS);
+    const value_base64 = utils.UInt8Tobase64Str(value);
+    return BLE.writeCharacteristics(this.device, ch, value_base64);
+  }
+  //#endregion
+
   // #endregion
 }
