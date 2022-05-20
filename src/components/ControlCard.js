@@ -6,13 +6,15 @@ import Dialog from "react-native-dialog";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import BatteryIndicator from './BatteryIndicator';
-import MonitorModal from './MonitorModal';
 import RFIDModal from './RFIDModal';
+import MonitorModal from './MonitorModal';
+import DFUModal from './DFUModal';
 
 import { DevicesContext } from '../redux/DevicesContext';
 
 import RFIDIcon from '../icons/RFIDIcon';
 import MonitorIcon from '../icons/MonitorIcon';
+import DFUIcon from '../icons/DFUIcon';
 
 import theme from '../styles/theme';
 
@@ -22,6 +24,7 @@ export default function ControlCard({ batteryLevel, batteryCharge, batteryVoltag
 
   const [modalRFIDVisible, setModalRFIDVisible] = useState(false);
   const [modalMonitorVisible, setModalMonitorVisible] = useState(false);
+  const [modalDFUVisible, setModalDFUVisible] = useState(false);
 
   const [promptVisible, setPromptVisible] = useState(false);
   const [deviceName, setDeviceName] = useState(controlledDevice.getName());
@@ -65,11 +68,14 @@ export default function ControlCard({ batteryLevel, batteryCharge, batteryVoltag
 
   const openRFIDModal = () => {
     setModalRFIDVisible(true);
-    console.log("Modal opened");
   }
 
   const openMonitorModal = () => {
     setModalMonitorVisible(true);
+  }
+
+  const openDFUModal = () => {
+    setModalDFUVisible(true);
   }
 
   return (
@@ -108,16 +114,23 @@ export default function ControlCard({ batteryLevel, batteryCharge, batteryVoltag
             <TouchableHighlight onPress={openMonitorModal}>
               <MonitorIcon width={35} height={35} fill={"white"} />
             </TouchableHighlight>
+            <TouchableHighlight onPress={openDFUModal} >
+              <DFUIcon width={35} height={35} fill={"white"} />
+            </TouchableHighlight>
           </View>
         </View>
 
       </Card>
       {
+        modalRFIDVisible? <RFIDModal visible={true} setModalVisible={setModalRFIDVisible}></RFIDModal> : null
+      }
+
+      {
         modalMonitorVisible? <MonitorModal visible={true} setModalVisible={setModalMonitorVisible} batteryVoltage={batteryVoltage} flashModeActive={flashModeActive}></MonitorModal> : null
       }
 
       {
-        modalRFIDVisible? <RFIDModal visible={true} setModalVisible={setModalRFIDVisible}></RFIDModal> : null
+        modalDFUVisible? <DFUModal visible={true} setModalVisible={setModalDFUVisible}></DFUModal> : null
       }
 
       <Dialog.Container onBackdropPress={hideDialog} visible={promptVisible}>
