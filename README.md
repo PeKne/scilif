@@ -9,7 +9,7 @@ Project is configured and tested running on physical Iphone SE device and Androi
 
 ## Demostration
 Very vague demostration of app functionality:
-https://user-images.githubusercontent.com/26143964/155496807-cac9e525-d333-4e8a-a7ab-c60a35547dcb.mp4
+<video width="630" height="300" src="https://user-images.githubusercontent.com/26143964/155496807-cac9e525-d333-4e8a-a7ab-c60a35547dcb.mp4"></video>
 
 Steps demostrated:
 1. connection of app to BLE device
